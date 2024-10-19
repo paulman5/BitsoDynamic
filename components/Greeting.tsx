@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import { useState, useRef, useEffect } from "react";
-import { useGreeting } from "../hooks/useGreeting";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
-import { toast } from "react-toastify";
+import { useState, useRef, useEffect } from "react"
+import { useGreeting } from "../hooks/useGreeting"
+import { useConnectModal } from "@rainbow-me/rainbowkit"
+import { toast } from "react-toastify"
 
 const Greeting = () => {
-  const [newGreeting, setNewGreeting] = useState<string>("");
-  const newGreetingInputRef = useRef<HTMLInputElement>(null);
+  const [newGreeting, setNewGreeting] = useState<string>("")
+  const newGreetingInputRef = useRef<HTMLInputElement>(null)
 
   const onSetGreetingSuccess = () => {
     toast.success(`Successfully set your new greeting`, {
@@ -18,10 +18,10 @@ const Greeting = () => {
       pauseOnHover: true,
       theme: "light",
       className: "text-sm",
-    });
-    setNewGreeting("");
-    newGreetingInputRef.current?.blur();
-  };
+    })
+    setNewGreeting("")
+    newGreetingInputRef.current?.blur()
+  }
 
   const {
     address,
@@ -32,15 +32,15 @@ const Greeting = () => {
     setGreetingLoading,
     prepareSetGreetingError,
     setGreetingError,
-  } = useGreeting({ newGreeting, onSetGreetingSuccess });
+  } = useGreeting({ newGreeting, onSetGreetingSuccess })
 
   useEffect(() => {
     if (!address) {
-      setNewGreeting("");
+      setNewGreeting("")
     }
-  }, [address]);
+  }, [address])
 
-  const { openConnectModal } = useConnectModal();
+  const { openConnectModal } = useConnectModal()
 
   return (
     <div className="space-y-8">
@@ -114,7 +114,7 @@ const Greeting = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export { Greeting };
+export { Greeting }

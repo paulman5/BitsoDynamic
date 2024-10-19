@@ -1,5 +1,5 @@
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { Wrapper } from "./Wrapper";
+import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { Wrapper } from "./Wrapper"
 
 const Header = () => {
   return (
@@ -17,7 +17,7 @@ const Header = () => {
         </div>
       </Wrapper>
     </header>
-  );
-};
+  )
+}
 
-export { Header };
+export { Header }
