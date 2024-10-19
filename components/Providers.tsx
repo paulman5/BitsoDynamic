@@ -1,26 +1,52 @@
 "use client"
 
-import { ReactNode } from "react"
+import {
+  DynamicContextProvider,
+  DynamicWidget,
+} from "@dynamic-labs/sdk-react-core"
+import { EthereumWalletConnectors } from "@dynamic-labs/ethereum"
+import { DynamicWagmiConnector } from "@dynamic-labs/wagmi-connector"
+import { createConfig, WagmiProvider, useAccount } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { WagmiProvider } from "wagmi"
-import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit"
-import { hardhat, sepolia } from "wagmi/chains"
+import { http } from "viem"
+import { mainnet } from "viem/chains"
+
+const config = createConfig({
+  chains: [mainnet],
+  multiInjectedProviderDiscovery: false,
+  transports: {
+    [mainnet.id]: http(),
+  },
+})
 
 const queryClient = new QueryClient()
 
-const config = getDefaultConfig({
-  appName: "Solidity Next.js Starter",
-  projectId: process.env.NEXT_PUBLIC_RAINBOWKIT_PROJECT_ID ?? "",
-  chains: [hardhat, sepolia],
-  ssr: true,
-})
-
-const Providers = ({ children }: { children: ReactNode }) => (
-  <WagmiProvider config={config}>
-    <QueryClientProvider client={queryClient}>
-      <RainbowKitProvider>{children}</RainbowKitProvider>
-    </QueryClientProvider>
-  </WagmiProvider>
+export const Providers = ({ children }: { children: React.ReactNode }) => (
+  <DynamicContextProvider
+    settings={{
+      environmentId: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID || "",
+      walletConnectors: [EthereumWalletConnectors],
+    }}
+  >
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <DynamicWagmiConnector>
+          <DynamicWidget />
+          <AccountInfo />
+        </DynamicWagmiConnector>
+      </QueryClientProvider>
+    </WagmiProvider>
+  </DynamicContextProvider>
 )
 
-export { Providers }
+function AccountInfo() {
+  const { address, isConnected, chain } = useAccount()
+
+  return (
+    <div>
+      <p>wagmi connected: {isConnected ? "true" : "false"}</p>
+      <p>wagmi address: {address}</p>
+      <p>wagmi network: {chain?.id}</p>
+    </div>
+  )
+}
