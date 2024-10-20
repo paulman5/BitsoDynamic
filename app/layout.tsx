@@ -1,5 +1,4 @@
 import "./globals.css"
-import "@rainbow-me/rainbowkit/styles.css"
 import "react-toastify/dist/ReactToastify.css"
 import type { Metadata } from "next"
 import { Inter as FontSans } from "next/font/google"
@@ -32,8 +31,10 @@ export default function RootLayout({
         )}
       >
         <Providers>
-          <Header />
-          {children}
+          <div>
+            <Header />
+            {children}
+          </div>
         </Providers>
         <ToastContainer />
       </body>

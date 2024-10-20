@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import {
   DynamicContextProvider,
   DynamicWidget,
@@ -19,6 +20,8 @@ const config = createConfig({
   },
 })
 
+// Dynamic widget import
+
 const queryClient = new QueryClient()
 
 export const Providers = ({ children }: { children: React.ReactNode }) => (
@@ -30,23 +33,8 @@ export const Providers = ({ children }: { children: React.ReactNode }) => (
   >
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <DynamicWagmiConnector>
-          <DynamicWidget />
-          <AccountInfo />
-        </DynamicWagmiConnector>
+        <DynamicWagmiConnector>{children}</DynamicWagmiConnector>
       </QueryClientProvider>
     </WagmiProvider>
   </DynamicContextProvider>
 )
-
-function AccountInfo() {
-  const { address, isConnected, chain } = useAccount()
-
-  return (
-    <div>
-      <p>wagmi connected: {isConnected ? "true" : "false"}</p>
-      <p>wagmi address: {address}</p>
-      <p>wagmi network: {chain?.id}</p>
-    </div>
-  )
-}

@@ -1,7 +1,11 @@
+"use client"
+
 import { Wrapper } from "@/components/Wrapper"
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 import { Greeting } from "@/components/Greeting"
 
-const Home = () => {
+const Page = () => {
+  const { user } = useDynamicContext()
   return (
     <main>
       <Wrapper>
@@ -11,4 +15,4 @@ const Home = () => {
   )
 }
 
-export default Home
+export default Page
