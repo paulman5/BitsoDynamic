@@ -1,3 +1,8 @@
+install: 
+sudo apt update
+  116  sudo apt install python3 python3-pip -y
+  117  pip3 install fastapi uvicorn
+
 uvicorn webhook_server_simple:app --host 0.0.0.0 --port 8080
 
 
