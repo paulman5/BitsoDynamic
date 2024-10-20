@@ -19,12 +19,6 @@ const Page = () => {
 
   // const { tokenBalances, isLoading, isError, error } = useTokenBalances()
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      router.push("/payments")
-    }
-  }, [isLoggedIn])
-
   return (
     <main>
       <Wrapper>

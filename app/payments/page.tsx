@@ -25,17 +25,13 @@ const SendTransactionSection: FC = () => {
   >()
   const [transactionData, setTransactionData] = useState(null)
 
-  const { user } = useDynamicContext()
-
   const userWallets = useUserWallets()
   const currentUser = userWallets[0]
 
-  useEffect(() => {
-    setCurrentAddress(user?.verifiedCredentials[0].address)
-  }, [user?.verifiedCredentials])
+  
 
   useEffect(() => {
-    async function fetchTransaction() {
+    async function fetchTransactionData() {
       try {
         const response = await fetch("/api/transaction")
         if (!response.ok) {
@@ -44,12 +40,16 @@ const SendTransactionSection: FC = () => {
 
         const data = await response.json()
         setTransactionData(data)
+        console.log("transaction data", data)
       } catch (err) {
-        console.log("Error fetching transaction:", err)
+        console.log("error fetching transaction data", err)
       }
     }
-    fetchTransaction()
-  }, [])
+
+    fetchTransactionData()
+  }, []) // Adding an empty dependency array to fetch data only on component mount
+
+  console.log("the transaction data:", transactionData)
 
   console.log("the data of the webhook is:", transactionData)
 

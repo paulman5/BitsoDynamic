@@ -1,35 +1,43 @@
-// app/api/transaction/route.js
-
 import fs from "fs"
-import msgpack from "msgpack5"
+import path from "path"
 
-const filePath = "/tmp/transaction_data.msgpack" // Adjust for your OS if needed
+const filePath = "@/components/tmp.txt" // Adjust the path if needed for your OS
 
-export async function GET() {
-  try {
-    // Check if the file exists
-    if (!fs.existsSync(filePath)) {
-      return new Response(
-        JSON.stringify({ message: "Transaction file not found." }),
-        { status: 404 }
-      )
-    }
+function checkForTransactionFile() {
+  // Check if the transaction file exists
+  if (fs.existsSync(filePath)) {
+    // Read the JSON file
+    fs.readFile(filePath, "utf8", (err, data) => {
+      if (err) {
+        console.error("Error reading transaction file:", err)
+        return
+      }
 
-    // Read the file
-    const data = fs.readFileSync(filePath)
-    const transaction = msgpack().decode(data)
+      try {
+        // Parse the JSON data
+        const transaction = JSON.parse(data)
+        console.log("Transaction data:", transaction)
 
-    // Return the transaction data as JSON
-    return new Response(JSON.stringify(transaction), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
+        // Process the transaction (you can add your custom logic here)
+        processTransaction(transaction)
+
+        // Delete the file after processing to avoid reprocessing
+        fs.unlinkSync(filePath)
+      } catch (jsonErr) {
+        console.error("Error parsing JSON data:", jsonErr)
+      }
     })
-  } catch (err) {
-    console.error("Error reading transaction file:", err)
-    return new Response(JSON.stringify({ message: "Internal server error." }), {
-      status: 500,
-    })
+  } else {
+    console.log("No transaction file found.")
   }
 }
+
+function processTransaction(transaction) {
+  // Example transaction processing logic
+  console.log(
+    `Processing transaction: ${transaction.transaction_type} ${transaction.amount} to ${transaction.address_to}`
+  )
+}
+
+// Periodically check for the transaction file every 5 seconds
+setInterval(checkForTransactionFile, 5000)
