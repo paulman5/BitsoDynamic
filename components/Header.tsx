@@ -9,7 +9,7 @@ const Header = () => {
   useEffect(() => {
     setShowAuthFlow(true)
     console.log("showAuthFlow", showAuthFlow)
-  }, [showAuthFlow])
+  }, [showAuthFlow, setShowAuthFlow])
 
   console.log("showAuthFlow button click", showAuthFlow)
   return (
