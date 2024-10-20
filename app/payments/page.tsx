@@ -23,6 +23,7 @@ const SendTransactionSection: FC = () => {
   const [addressToSendTo, setAddressToSendTo] = useState<
     `0x${string}` | string
   >()
+  const [transactionData, setTransactionData] = useState(null)
 
   const { user } = useDynamicContext()
 
@@ -32,6 +33,26 @@ const SendTransactionSection: FC = () => {
   useEffect(() => {
     setCurrentAddress(user?.verifiedCredentials[0].address)
   }, [user?.verifiedCredentials])
+
+  useEffect(() => {
+    async function fetchTransaction() {
+      try {
+        const response = await fetch("/api/transaction")
+        if (!response.ok) {
+          throw new Error(`Error: ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        setTransactionData(data)
+      } catch (err) {
+        console.log("Error fetching transaction:", err)
+      }
+    }
+
+    fetchTransaction()
+  }, [])
+
+  console.log("the data of the webhook is:", transactionData)
 
   console.log("currentUser", currentUser)
   console.log("currentAddress", currentAddress)
