@@ -1,4 +1,4 @@
-
+uvicorn webhook_server_simple:app --host 0.0.0.0 --port 8080
 
 
 # Voice Wallet Control
