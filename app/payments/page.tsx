@@ -48,7 +48,6 @@ const SendTransactionSection: FC = () => {
         console.log("Error fetching transaction:", err)
       }
     }
-
     fetchTransaction()
   }, [])
 
