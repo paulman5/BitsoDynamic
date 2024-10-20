@@ -7,36 +7,63 @@ import { isEthereumWallet } from "@dynamic-labs/ethereum"
 import { useTokenBalances } from "@dynamic-labs/sdk-react-core"
 import { normalize } from "viem/ens"
 import { publicClient } from "@/components/client"
-import { account, walletClient } from "@/components/config"
+import { walletClient } from "@/components/config"
+import { sepolia } from "viem/chains"
+import { Input } from "@/components/ui/input"
+import { useUserWallets } from "@dynamic-labs/sdk-react-core"
 
-const SendTransactionSection: FC = async () => {
+const SendTransactionSection: FC = () => {
   const { primaryWallet } = useDynamicContext()
   const [txnHash, setTxnHash] = useState("")
-  const [address, setAddress] = useState("")
-  const [amount, setAmount] = useState("")
+  const [currentAddress, setCurrentAddress] = useState<string | undefined>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [ensName, SetEnsName] = useState<string>("")
   const [ensNameTo, setEnsNameTo] = useState<string>("")
+  const [value, setValue] = useState<string>("")
+  const [addressToSendTo, setAddressToSendTo] = useState<
+    `0x${string}` | string
+  >()
 
   const { user } = useDynamicContext()
 
-  console.log("user info", user)
-  const resolverAddress = await publicClient.getEnsResolver({
-    name: normalize(ensName),
-  })
+  const userWallets = useUserWallets()
+  const currentUser = userWallets[0]
 
-  const addressToSentTo = await publicClient.getEnsResolver({
-    name: normalize(ensNameTo),
-  })
+  useEffect(() => {
+    setCurrentAddress(user?.verifiedCredentials[0].address)
+  }, [user?.verifiedCredentials])
+
+  console.log("currentUser", currentUser)
+  console.log("currentAddress", currentAddress)
+
+  const initiateResolverAddress = async () => {
+    const resolverAddress = await publicClient.getEnsResolver({
+      name: normalize(ensName),
+    })
+  }
+
+  const initiateAddressToSendTo = async () => {
+    const addressToSentTo = await publicClient.getEnsResolver({
+      name: normalize(ensNameTo),
+    })
+  }
 
   useEffect(() => {}, [ensName])
   const { tokenBalances, isLoading, isError, error } = useTokenBalances()
 
-  const hash = await walletClient.sendTransaction({
-    account: ensName as `0x${string}`,
-    to: ensNameTo as `0x${string}`,
-    value: parseEther("1"),
-  })
+  const initiateTransaction = async () => {
+    if (!walletClient) {
+      console.error("Wallet client is not initialized")
+      return
+    }
+
+    const hash = await walletClient.sendTransaction({
+      account: currentAddress as `0x${string}`,
+      to: addressToSendTo as `0x${string}`,
+      value: parseEther(value),
+      chain: sepolia,
+    })
+  }
 
   const onSubmit: FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault()
@@ -51,8 +78,10 @@ const SendTransactionSection: FC = async () => {
       const walletClient = await primaryWallet.getWalletClient()
 
       const transaction = {
-        to: address.toLowerCase().startsWith("0x") ? address : `0x${address}`,
-        value: amount ? parseEther(amount) : undefined,
+        to: currentAddress?.toLowerCase().startsWith("0x")
+          ? currentAddress
+          : `0x${currentAddress}`,
+        value: value ? parseEther(value) : undefined,
       }
 
       const hash = await walletClient.sendTransaction(transaction)
@@ -75,23 +104,25 @@ const SendTransactionSection: FC = async () => {
     <>
       <form onSubmit={onSubmit}>
         <p>Send to ETH address</p>
-        <input
+        <Input
           name="address"
           type="text"
           required
           placeholder="Address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          onChange={(e) => setAddressToSendTo(e.target.value)}
         />
-        <input
+        <Input
           name="amount"
           type="text"
           required
           placeholder="0.05"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => setValue(e.target.value)}
         />
-        <button type="submit" disabled={isSubmitting}>
+        <button
+          onClick={() => initiateTransaction()}
+          type="submit"
+          disabled={isSubmitting}
+        >
           {isSubmitting ? "Sending..." : "Send"}
         </button>
         {txnHash && (

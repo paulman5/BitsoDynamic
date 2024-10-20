@@ -1,13 +1,11 @@
 import { createWalletClient, custom } from "viem"
-import { baseSepolia } from "viem/chains"
+import { sepolia } from "viem/chains"
 
-export const walletClient = createWalletClient({
-  chain: baseSepolia,
-  transport: custom(window.ethereum!),
-})
-export let account: string
+export let walletClient: ReturnType<typeof createWalletClient> | undefined
 
-async function initAccount() {
-  ;[account] = await walletClient.getAddresses()
+if (typeof window !== "undefined") {
+  walletClient = createWalletClient({
+    chain: sepolia,
+    transport: custom(window.ethereum!),
+  })
 }
-initAccount()
