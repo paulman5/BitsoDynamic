@@ -85,44 +85,13 @@ const SendTransactionSection: FC = () => {
     })
   }
 
-  const onSubmit: FormEventHandler<HTMLFormElement> = async (event) => {
-    event.preventDefault()
-    if (!primaryWallet || !isEthereumWallet(primaryWallet)) {
-      console.error("No Ethereum wallet connected")
-      return
-    }
-    setIsSubmitting(true)
-
-    try {
-      const publicClient = await primaryWallet.getPublicClient()
-      const walletClient = await primaryWallet.getWalletClient()
-
-      const transaction = {
-        to: currentAddress?.toLowerCase().startsWith("0x")
-          ? currentAddress
-          : `0x${currentAddress}`,
-        value: value ? parseEther(value) : undefined,
-      }
-
-      const hash = await walletClient.sendTransaction(transaction)
-      setTxnHash(hash)
-
-      const receipt = await publicClient.getTransactionReceipt({ hash })
-      console.log(receipt)
-    } catch (error) {
-      console.error("Transaction failed:", error)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   if (!primaryWallet || !isEthereumWallet(primaryWallet)) {
     return <p>Please connect an Ethereum wallet to send transactions.</p>
   }
 
   return (
     <>
-      <form onSubmit={onSubmit}>
+      <form>
         <p>Send to ETH address</p>
         <Input
           name="address"
