@@ -9,6 +9,7 @@ import { evmProvidersSelector } from "@dynamic-labs/ethereum-core"
 import { useUserWallets } from "@dynamic-labs/sdk-react-core"
 import { useEffect } from "react"
 
+\
 const Page = () => {
   const { user } = useDynamicContext()
 
@@ -27,7 +28,7 @@ const Page = () => {
       if (!provider) return
 
       // Fetch the wallet balance
-      const balance = await provider.getBalance({ address: wallet.address })
+      const balance = await provider.getBalance({ address: wallet.address as '0x${string}' })
 
       console.log("balance", balance.toString())
       console.log("wallet", wallet.address)
