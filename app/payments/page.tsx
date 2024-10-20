@@ -1,19 +1,42 @@
 "use client"
 
-import { FC, FormEventHandler, useState } from "react"
+import { FC, FormEventHandler, useState, useEffect } from "react"
 import { parseEther } from "viem"
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 import { isEthereumWallet } from "@dynamic-labs/ethereum"
 import { useTokenBalances } from "@dynamic-labs/sdk-react-core"
+import { normalize } from "viem/ens"
+import { publicClient } from "@/components/client"
+import { account, walletClient } from "@/components/config"
 
-const SendTransactionSection: FC = () => {
+const SendTransactionSection: FC = async () => {
   const { primaryWallet } = useDynamicContext()
   const [txnHash, setTxnHash] = useState("")
   const [address, setAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [ensName, SetEnsName] = useState<string>("")
+  const [ensNameTo, setEnsNameTo] = useState<string>("")
 
+  const { user } = useDynamicContext()
+
+  console.log("user info", user)
+  const resolverAddress = await publicClient.getEnsResolver({
+    name: normalize(ensName),
+  })
+
+  const addressToSentTo = await publicClient.getEnsResolver({
+    name: normalize(ensNameTo),
+  })
+
+  useEffect(() => {}, [ensName])
   const { tokenBalances, isLoading, isError, error } = useTokenBalances()
+
+  const hash = await walletClient.sendTransaction({
+    account: ensName as `0x${string}`,
+    to: ensNameTo as `0x${string}`,
+    value: parseEther("1"),
+  })
 
   const onSubmit: FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault()
@@ -81,6 +104,7 @@ const SendTransactionSection: FC = () => {
       <ul>
         {tokenBalances?.map((tokenBalance) => (
           <li key={tokenBalance.address}>
+            <p>Token balances:</p>
             {tokenBalance.name} {tokenBalance.balance} {tokenBalance.symbol} ($
             {tokenBalance.price}) | ${tokenBalance.marketValue}
           </li>

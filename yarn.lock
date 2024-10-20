@@ -9577,10 +9577,10 @@ vary@~1.1.2:
   resolved "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
 
-"viem@^1.16.6 || ^2.1.1", viem@^2.1.1, viem@^2.21.29, viem@^2.7.6, viem@2.x:
-  version "2.21.29"
-  resolved "https://registry.npmjs.org/viem/-/viem-2.21.29.tgz"
-  integrity sha512-n9LoCJjmI1XsE33nl+M4p3Wy5hczv7YC682RpX4Qk9cw8s9HJU+hUi5eDcNDPBcAwIHGCPKsf8yFBEYnE2XYVg==
+"viem@^1.16.6 || ^2.1.1", viem@^2.1.1, viem@^2.21.30, viem@^2.7.6, viem@2.x:
+  version "2.21.30"
+  resolved "https://registry.npmjs.org/viem/-/viem-2.21.30.tgz"
+  integrity sha512-igkuMUFmRaHNUP2jGH0w7ETB5Vrg2gtZnInKg5dO6U/V2ndq+GUL94qwGusZTMtkqmyaXFm9+ZzMWBdNIXdEqg==
   dependencies:
     "@adraffy/ens-normalize" "1.11.0"
     "@noble/curves" "1.6.0"

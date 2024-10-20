@@ -46,7 +46,7 @@
     "tailwindcss": "^3.4.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
-    "viem": "^2.21.29",
+    "viem": "^2.21.30",
     "wagmi": "^2.12.20",
     "zod": "^3.23.8"
   }

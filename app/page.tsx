@@ -10,8 +10,6 @@ import { useUserWallets } from "@dynamic-labs/sdk-react-core"
 import { useEffect } from "react"
 
 const Page = () => {
-  const { user } = useDynamicContext()
-
   const { defaultProvider } = useRpcProviders(evmProvidersSelector)
   const userWallets = useUserWallets()
 
@@ -40,7 +38,6 @@ const Page = () => {
     <main>
       <Wrapper>
         <Greeting />
-        {user?.email}
       </Wrapper>
     </main>
   )

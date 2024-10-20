@@ -10,14 +10,13 @@ import { DynamicWagmiConnector } from "@dynamic-labs/wagmi-connector"
 import { createConfig, WagmiProvider, useAccount } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { http } from "viem"
-import { mainnet, sepolia } from "viem/chains"
+import { baseSepolia } from "viem/chains"
 
 const config = createConfig({
-  chains: [mainnet],
+  chains: [baseSepolia],
   multiInjectedProviderDiscovery: false,
   transports: {
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
+    [baseSepolia.id]: http(),
   },
 })
 
