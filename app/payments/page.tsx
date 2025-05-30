@@ -28,8 +28,6 @@ const SendTransactionSection: FC = () => {
   const userWallets = useUserWallets()
   const currentUser = userWallets[0]
 
-  
-
   useEffect(() => {
     async function fetchTransactionData() {
       try {

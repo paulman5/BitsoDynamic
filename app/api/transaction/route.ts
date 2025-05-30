@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 
-const filePath = "@/components/tmp.txt" // Adjust the path if needed for your OS
+const filePath = "./tmp.txt" // Adjust the path if needed for your OS
 
 function checkForTransactionFile() {
   // Check if the transaction file exists

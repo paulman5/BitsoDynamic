@@ -17,11 +17,15 @@ export const metadata: Metadata = {
     "A starter kit for building full stack Ethereum dApps with Solidity and Next.js",
 }
 
+const ZERODEV_RPC = process.env.NEXT_PUBLIC_ZERODEV_RPC
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  console.log("the RPC URL is", ZERODEV_RPC)
+
   return (
     <html lang="en">
       <body
