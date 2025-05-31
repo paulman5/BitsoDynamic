@@ -25,6 +25,7 @@ import {
   Settings,
   TrendingUp,
 } from "lucide-react"
+import { useSmartAccount } from "@/hooks/useSmartaccount"
 
 const tokens = [
   { symbol: "PEPE", name: "Pepe", balance: "1,250,000", icon: "🐸" },
