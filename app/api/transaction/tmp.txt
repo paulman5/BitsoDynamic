@@ -1,7 +1,0 @@
-
-
-{
-  "transaction_type": "send",
-  "address_to": "0x1234abcd5678ef90",
-  "amount": 100
-}

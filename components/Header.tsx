@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({
   const { setShowAuthFlow, showAuthFlow, handleLogOut } =
     useDynamicContext?.() || {}
 
-  const { kernelClient, accountAddress } = useSmartAccount()
+  const { accountAddress } = useSmartAccount()
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm">
