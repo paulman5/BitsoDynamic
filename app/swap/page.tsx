@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useReadContracts, useAccount } from "wagmi"
 import {
   Select,
   SelectContent,
@@ -24,18 +25,29 @@ import {
 } from "lucide-react"
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 import { useSmartAccount } from "@/hooks/useSmartaccount"
+import { ethers } from "ethers"
+import mockUsdcAbi from "@/abi/mockusdc.json"
+import { useUserWallets } from "@dynamic-labs/sdk-react-core"
+import erc20Abi from "@/abi/erc20.json"
+import { formatUnits } from "viem"
+import type { Abi } from "viem"
 
-const tokens = [
-  { symbol: "PEPE", name: "Pepe", balance: "1,250,000", icon: "🐸" },
-  { symbol: "USDC", name: "USD Coin", balance: "500.00", icon: "💵" },
-  { symbol: "WETH", name: "Wrapped Ethereum", balance: "2.5", icon: "⚡" },
-  { symbol: "UNI", name: "Uniswap", balance: "150.0", icon: "🦄" },
-]
-
-const ERC20_ABI = [
-  "function balanceOf(address owner) view returns (uint256)",
-  "function decimals() view returns (uint8)",
-  "function symbol() view returns (string)",
+const tokens: {
+  address: `0x${string}`
+  symbol: string
+  icon: string
+  formatted?: string
+}[] = [
+  {
+    address: "0x6c6Dc940F2E6a27921df887AD96AE586abD8EfD8",
+    symbol: "USDC",
+    icon: "💵",
+  },
+  {
+    address: "0x2eC77FDcb56370A3C0aDa518DDe86D820d76743B",
+    symbol: "PEPE",
+    icon: "🐸",
+  },
 ]
 
 const transactions = [
@@ -61,6 +73,9 @@ const transactions = [
   },
 ]
 
+const MOCKUSDC_ADDRESS = "0x3E8DCfF66B2b305467Ea3327068B3a31624502d7"
+const PEPE_ADDRESS = "0x6982508145454ce325ddbe47a25d4ec3d2311933"
+
 export default function TokenSwapDApp() {
   const [fromToken, setFromToken] = useState(tokens[0])
   const [toToken, setToToken] = useState(tokens[1])
@@ -74,6 +89,54 @@ export default function TokenSwapDApp() {
 
   const { primaryWallet } = useDynamicContext()
   const { accountAddress } = useSmartAccount()
+  const { address } = useAccount()
+
+  const { data, isLoading } = useReadContracts({
+    contracts: tokens.flatMap((token) => [
+      {
+        address: token.address,
+        abi: erc20Abi as Abi,
+        functionName: "balanceOf",
+        args: [address!],
+      },
+      {
+        address: token.address,
+        abi: erc20Abi as Abi,
+        functionName: "decimals",
+      },
+    ]),
+    allowFailure: false,
+    query: {
+      enabled: !!address,
+    },
+  })
+
+  const tokenBalances = tokens.map((token, i) => {
+    const balanceRaw = data?.[i * 2] as bigint | undefined
+    const decimals = data?.[i * 2 + 1] as number | undefined
+    const formatted =
+      balanceRaw !== undefined && decimals !== undefined
+        ? formatUnits(balanceRaw, decimals)
+        : "-"
+    return {
+      ...token,
+      formatted,
+    }
+  })
+
+  // const { usdcBalance } = useReadContract({
+  //   address: MOCKUSDC_ADDRESS,
+  //   abi: erc20Abi,
+  //   functionName: "balanceOf",
+  //   args: [accountAddress],
+  // })
+
+  // const { PepeBalance } = useReadContract({
+  //   address: MOCKUSDC_ADDRES,
+  //   abi: erc20Abi,
+  //   functionName: "balanceOf",
+  //   args: [accountAddress],
+  // })
 
   const handleSwapTokens = () => {
     const tempToken = fromToken
@@ -176,7 +239,7 @@ export default function TokenSwapDApp() {
                           className="text-right text-xl font-semibold border-0 bg-transparent p-0 h-auto"
                         />
                         <div className="text-xs text-gray-500 mt-1">
-                          Balance: {fromToken.balance}
+                          Balance: {fromToken.formatted}
                         </div>
                       </div>
                     </div>
@@ -236,7 +299,7 @@ export default function TokenSwapDApp() {
                           className="text-right text-xl font-semibold border-0 bg-transparent p-0 h-auto"
                         />
                         <div className="text-xs text-gray-500 mt-1">
-                          Balance: {toToken.balance}
+                          Balance: {toToken.formatted}
                         </div>
                       </div>
                     </div>
@@ -336,25 +399,29 @@ export default function TokenSwapDApp() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {tokens.map((token) => (
-                    <div
-                      key={token.symbol}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{token.icon}</span>
-                        <div>
-                          <div className="font-medium">{token.symbol}</div>
-                          <div className="text-xs text-gray-500">
-                            {token.name}
+                  {isLoading ? (
+                    <div>Loading balances...</div>
+                  ) : (
+                    tokenBalances.map((token) => (
+                      <div
+                        key={token.symbol}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{token.icon}</span>
+                          <div>
+                            <div className="font-medium">{token.symbol}</div>
+                            <div className="text-xs text-gray-500">
+                              {token.formatted}
+                            </div>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <div className="font-medium">{token.formatted}</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium">{token.balance}</div>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </CardContent>
               </Card>
             )}
