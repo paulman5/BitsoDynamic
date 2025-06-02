@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,16 +15,14 @@ import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
 import {
   ArrowUpDown,
-  Wallet,
   Copy,
   ExternalLink,
   RefreshCw,
   Clock,
   CheckCircle,
   Loader2,
-  Settings,
-  TrendingUp,
 } from "lucide-react"
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 import { useSmartAccount } from "@/hooks/useSmartaccount"
 
 const tokens = [
@@ -68,10 +66,8 @@ export default function TokenSwapDApp() {
   const [slippage, setSlippage] = useState([0.5])
   const [expiry, setExpiry] = useState([5])
 
-  const handleConnect = () => {
-    setIsConnected(true)
-    setSmartAccount("0x742d35Cc6634C0532925a3b8D4C9db96590e4CAF")
-  }
+  const { primaryWallet } = useDynamicContext()
+  const { accountAddress } = useSmartAccount()
 
   const handleSwapTokens = () => {
     const tempToken = fromToken
@@ -87,6 +83,12 @@ export default function TokenSwapDApp() {
     await new Promise((resolve) => setTimeout(resolve, 3000))
     setIsSwapping(false)
   }
+
+  useEffect(() => {
+    if (primaryWallet) {
+      setIsConnected(true)
+    }
+  }, [primaryWallet])
 
   const copyAddress = () => {
     navigator.clipboard.writeText(smartAccount)
@@ -115,8 +117,8 @@ export default function TokenSwapDApp() {
                 </div>
                 {isConnected && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span>Smart Account:</span>
-                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">
+                    <span>Smart Account: {accountAddress}</span>
+                    <code className="bg-gray-100 rounded text-xs">
                       {smartAccount}
                     </code>
                     <Button variant="ghost" size="sm" onClick={copyAddress}>

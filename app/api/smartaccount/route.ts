@@ -16,6 +16,8 @@ export async function GET() {
   const privateKey = process.env.PRIVATE_KEY as `0x${string}`
   const ZERODEV_RPC = process.env.ZERODEV_RPC!
 
+  console.log("privateKey", privateKey)
+
   if (!privateKey || !ZERODEV_RPC) {
     return NextResponse.json({ error: "Missing env vars" }, { status: 500 })
   }

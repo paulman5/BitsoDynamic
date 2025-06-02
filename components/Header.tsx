@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   onSettingsClick,
 }) => {
   // Dynamic context for login/logout, only used if not in swap page
-  const { setShowAuthFlow, showAuthFlow, handleLogOut } =
+  const { setShowAuthFlow, showAuthFlow, handleLogOut, primaryWallet } =
     useDynamicContext?.() || {}
 
   const { accountAddress } = useSmartAccount()
@@ -40,36 +40,13 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right: Connect Wallet */}
+        {/* Right: Connect Wallet */}
         <div className="flex items-center gap-4">
-          {isConnected !== undefined ? (
-            <>
-              {isConnected && (
-                <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">
-                    {accountAddress}
-                  </span>
-                </div>
-              )}
-              {!isConnected ? (
-                <Button
-                  onClick={onConnect}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                >
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Connect Wallet
-                </Button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={onSettingsClick}>
-                    <Settings className="w-4 h-4" />
-                  </Button>
-                  <div className="text-sm text-gray-600">
-                    {smartAccount?.slice(0, 6)}...{smartAccount?.slice(-4)}
-                  </div>
-                </div>
-              )}
-            </>
+          {primaryWallet ? (
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm text-green-700">{accountAddress}</span>
+            </div>
           ) : (
             <Button
               onClick={() => setShowAuthFlow?.(true)}

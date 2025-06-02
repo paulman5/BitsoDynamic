@@ -8,6 +8,7 @@ export const useSmartAccount = () => {
     const fetchAccount = async () => {
       const res = await fetch("/api/smartaccount")
       const data = await res.json()
+      console.log("data", data)
       setAccountAddress(data.address)
       setKernelClient(data.kernelClient)
     }
