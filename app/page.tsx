@@ -10,12 +10,6 @@ import { useIsLoggedIn } from "@dynamic-labs/sdk-react-core"
 import { useRouter } from "next/navigation"
 
 const Page = () => {
-  const { defaultProvider } = useRpcProviders(evmProvidersSelector)
-
-  const isLoggedIn = useIsLoggedIn()
-  const router = useRouter()
-  // const { setShowAuthFlow } = useDynamicContext()
-
   // const { tokenBalances, isLoading, isError, error } = useTokenBalances()
 
   return (

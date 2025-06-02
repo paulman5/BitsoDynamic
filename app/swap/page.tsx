@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useReadContracts, useAccount } from "wagmi"
+import { useReadContracts, useBalance, useAccount } from "wagmi"
 import {
   Select,
   SelectContent,
@@ -23,7 +23,10 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react"
-import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
+import {
+  useDynamicContext,
+  useTokenBalances,
+} from "@dynamic-labs/sdk-react-core"
 import { useSmartAccount } from "@/hooks/useSmartaccount"
 import { ethers } from "ethers"
 import mockUsdcAbi from "@/abi/mockusdc.json"
@@ -73,12 +76,10 @@ const transactions = [
   },
 ]
 
-const MOCKUSDC_ADDRESS = "0x3E8DCfF66B2b305467Ea3327068B3a31624502d7"
-const PEPE_ADDRESS = "0x6982508145454ce325ddbe47a25d4ec3d2311933"
-
 export default function TokenSwapDApp() {
   const [fromToken, setFromToken] = useState(tokens[0])
   const [toToken, setToToken] = useState(tokens[1])
+
   const [fromAmount, setFromAmount] = useState("")
   const [toAmount, setToAmount] = useState("")
   const [isConnected, setIsConnected] = useState(false)
@@ -88,8 +89,25 @@ export default function TokenSwapDApp() {
   const [expiry, setExpiry] = useState([5])
 
   const { primaryWallet } = useDynamicContext()
+
   const { accountAddress } = useSmartAccount()
   const { address } = useAccount()
+
+  const tokenAddressMap: Record<string, `0x${string}`> = {
+    mUSDC: "0x6c6Dc940F2E6a27921df887AD96AE586abD8EfD8",
+    mPEPE: "0x2eC77FDcb56370A3C0aDa518DDe86D820d76743B",
+  }
+
+  // Get balances for both tokens
+  const { data: fromBalance } = useBalance({
+    address,
+    token: tokenAddressMap[fromToken.symbol],
+  })
+
+  const { data: toBalance } = useBalance({
+    address,
+    token: tokenAddressMap[toToken.symbol],
+  })
 
   const { data, isLoading } = useReadContracts({
     contracts: tokens.flatMap((token) => [
@@ -111,7 +129,7 @@ export default function TokenSwapDApp() {
     },
   })
 
-  const tokenBalances = tokens.map((token, i) => {
+  const TokenBalances = tokens.map((token, i) => {
     const balanceRaw = data?.[i * 2] as bigint | undefined
     const decimals = data?.[i * 2 + 1] as number | undefined
     const formatted =
@@ -124,20 +142,6 @@ export default function TokenSwapDApp() {
     }
   })
 
-  // const { usdcBalance } = useReadContract({
-  //   address: MOCKUSDC_ADDRESS,
-  //   abi: erc20Abi,
-  //   functionName: "balanceOf",
-  //   args: [accountAddress],
-  // })
-
-  // const { PepeBalance } = useReadContract({
-  //   address: MOCKUSDC_ADDRES,
-  //   abi: erc20Abi,
-  //   functionName: "balanceOf",
-  //   args: [accountAddress],
-  // })
-
   const handleSwapTokens = () => {
     const tempToken = fromToken
     setFromToken(toToken)
@@ -146,6 +150,7 @@ export default function TokenSwapDApp() {
     setToAmount(fromAmount)
   }
 
+  console.log("fromToken", fromToken)
   const handleSwap = async () => {
     setIsSwapping(true)
     // Simulate swap process
@@ -239,7 +244,10 @@ export default function TokenSwapDApp() {
                           className="text-right text-xl font-semibold border-0 bg-transparent p-0 h-auto"
                         />
                         <div className="text-xs text-gray-500 mt-1">
-                          Balance: {fromToken.formatted}
+                          Balance:{" "}
+                          {TokenBalances.find(
+                            (t) => t.symbol === fromToken.symbol
+                          )?.formatted ?? "-"}
                         </div>
                       </div>
                     </div>
@@ -299,7 +307,10 @@ export default function TokenSwapDApp() {
                           className="text-right text-xl font-semibold border-0 bg-transparent p-0 h-auto"
                         />
                         <div className="text-xs text-gray-500 mt-1">
-                          Balance: {toToken.formatted}
+                          Balance:{" "}
+                          {TokenBalances.find(
+                            (t) => t.symbol === toToken.symbol
+                          )?.formatted ?? "-"}
                         </div>
                       </div>
                     </div>
@@ -402,7 +413,7 @@ export default function TokenSwapDApp() {
                   {isLoading ? (
                     <div>Loading balances...</div>
                   ) : (
-                    tokenBalances.map((token) => (
+                    TokenBalances.map((token) => (
                       <div
                         key={token.symbol}
                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
