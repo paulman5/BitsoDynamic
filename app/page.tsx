@@ -7,7 +7,6 @@ import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 import { useRpcProviders } from "@dynamic-labs/sdk-react-core"
 import { evmProvidersSelector } from "@dynamic-labs/ethereum-core"
 import { useIsLoggedIn } from "@dynamic-labs/sdk-react-core"
-import { useRouter } from "next/navigation"
 
 const Page = () => {
   // const { tokenBalances, isLoading, isError, error } = useTokenBalances()

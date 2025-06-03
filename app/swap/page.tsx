@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useReadContracts, useBalance, useAccount } from "wagmi"
+import { useReadContracts } from "wagmi"
 import {
   Select,
   SelectContent,
@@ -32,8 +32,9 @@ import { ethers } from "ethers"
 import mockUsdcAbi from "@/abi/mockusdc.json"
 import { useUserWallets } from "@dynamic-labs/sdk-react-core"
 import erc20Abi from "@/abi/erc20.json"
-import { formatUnits } from "viem"
+import { formatUnits, parseUnits, encodeFunctionData } from "viem"
 import type { Abi } from "viem"
+import mockSwapAbi from "@/abi/mockswap.json"
 
 const tokens: {
   address: `0x${string}`
@@ -76,6 +77,10 @@ const transactions = [
   },
 ]
 
+// Add your deployed MockSwap contract address here:
+const MOCK_SWAP_ADDRESS =
+  "0x718421BB9a6Bb63D4A63295d59c12196c3e221Ed" as `0x${string}`
+
 export default function TokenSwapDApp() {
   const [fromToken, setFromToken] = useState(tokens[0])
   const [toToken, setToToken] = useState(tokens[1])
@@ -87,27 +92,18 @@ export default function TokenSwapDApp() {
   const [isSwapping, setIsSwapping] = useState(false)
   const [slippage, setSlippage] = useState([0.5])
   const [expiry, setExpiry] = useState([5])
+  const [swapStatus, setSwapStatus] = useState<
+    null | "pending" | "success" | "error"
+  >(null)
 
   const { primaryWallet } = useDynamicContext()
 
   const { accountAddress } = useSmartAccount()
-  const { address } = useAccount()
 
   const tokenAddressMap: Record<string, `0x${string}`> = {
     mUSDC: "0x6c6Dc940F2E6a27921df887AD96AE586abD8EfD8",
     mPEPE: "0x2eC77FDcb56370A3C0aDa518DDe86D820d76743B",
   }
-
-  // Get balances for both tokens
-  const { data: fromBalance } = useBalance({
-    address,
-    token: tokenAddressMap[fromToken.symbol],
-  })
-
-  const { data: toBalance } = useBalance({
-    address,
-    token: tokenAddressMap[toToken.symbol],
-  })
 
   const { data, isLoading } = useReadContracts({
     contracts: tokens.flatMap((token) => [
@@ -115,7 +111,7 @@ export default function TokenSwapDApp() {
         address: token.address,
         abi: erc20Abi as Abi,
         functionName: "balanceOf",
-        args: [address!],
+        args: [accountAddress!],
       },
       {
         address: token.address,
@@ -125,7 +121,7 @@ export default function TokenSwapDApp() {
     ]),
     allowFailure: false,
     query: {
-      enabled: !!address,
+      enabled: !!accountAddress,
     },
   })
 
@@ -150,12 +146,76 @@ export default function TokenSwapDApp() {
     setToAmount(fromAmount)
   }
 
-  console.log("fromToken", fromToken)
   const handleSwap = async () => {
+    if (!fromAmount || !accountAddress) return
     setIsSwapping(true)
-    // Simulate swap process
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-    setIsSwapping(false)
+    setSwapStatus("pending")
+
+    try {
+      // Get decimals for the fromToken
+      const decimals = Number(
+        data?.[
+          tokens.findIndex((t) => t.symbol === fromToken.symbol) * 2 + 1
+        ] ?? 18
+      )
+      const amount = parseUnits(fromAmount, decimals)
+
+      // 1. Encode approve call
+      const approveData = encodeFunctionData({
+        abi: erc20Abi as Abi,
+        functionName: "approve",
+        args: [MOCK_SWAP_ADDRESS, amount],
+      })
+
+      // 2. Send approve as a single user operation
+      const approveRes = await fetch("/api/smartaccount", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          calls: [
+            {
+              to: fromToken.address,
+              data: approveData,
+            },
+          ],
+        }),
+      })
+      const approveJson = await approveRes.json()
+      if (!approveRes.ok) throw new Error(approveJson.error || "Approve failed")
+
+      // 3. Wait for allowance to be updated (simple delay; replace with polling for production)
+      await new Promise((resolve) => setTimeout(resolve, 10000)) // 10 seconds
+
+      // 4. Encode swapAToB call
+      const swapData = encodeFunctionData({
+        abi: mockSwapAbi.abi,
+        functionName: "swapAToB",
+        args: [amount],
+      })
+
+      // 5. Send swap as a single user operation
+      const swapRes = await fetch("/api/smartaccount", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          calls: [
+            {
+              to: MOCK_SWAP_ADDRESS,
+              data: swapData,
+            },
+          ],
+        }),
+      })
+      const swapJson = await swapRes.json()
+      if (!swapRes.ok) throw new Error(swapJson.error || "Swap failed")
+
+      setSwapStatus("success")
+    } catch (e) {
+      console.error("Swap error:", e)
+      setSwapStatus("error")
+    } finally {
+      setIsSwapping(false)
+    }
   }
 
   useEffect(() => {
@@ -383,6 +443,16 @@ export default function TokenSwapDApp() {
                     "Swap Tokens"
                   )}
                 </Button>
+                {swapStatus === "success" && (
+                  <div className="text-green-600 text-center mt-2">
+                    Swap successful!
+                  </div>
+                )}
+                {swapStatus === "error" && (
+                  <div className="text-red-600 text-center mt-2">
+                    Swap failed. Please try again.
+                  </div>
+                )}
 
                 {isConnected && (
                   <div className="text-center text-sm text-gray-600">
