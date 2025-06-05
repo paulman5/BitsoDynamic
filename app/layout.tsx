@@ -2,7 +2,7 @@ import "./globals.css"
 import "react-toastify/dist/ReactToastify.css"
 import type { Metadata } from "next"
 import { Inter as FontSans } from "next/font/google"
-import { Providers } from "@/components/Providers"
+import Providers from "@/components/Providers"
 import { Header } from "@/components/Header"
 import { ToastContainer } from "react-toastify"
 import { cn } from "@/lib/utils"
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     "A starter kit for building full stack Ethereum dApps with Solidity and Next.js",
 }
 
-const ZERODEV_RPC = process.env.NEXT_PUBLIC_ZERODEV_RPC
+const ZERODEV_RPC = process.env.ZERODEV_RPC
 
 export default function RootLayout({
   children,
@@ -25,6 +25,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   console.log("the RPC URL is", ZERODEV_RPC)
+  console.log(
+    "the environment ID is",
+    process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID
+  )
 
   return (
     <html lang="en">

@@ -23,18 +23,15 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react"
-import {
-  useDynamicContext,
-  useTokenBalances,
-} from "@dynamic-labs/sdk-react-core"
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 import { useSmartAccount } from "@/hooks/useSmartaccount"
-import { ethers } from "ethers"
-import mockUsdcAbi from "@/abi/mockusdc.json"
-import { useUserWallets } from "@dynamic-labs/sdk-react-core"
 import erc20Abi from "@/abi/erc20.json"
 import { formatUnits, parseUnits, encodeFunctionData } from "viem"
 import type { Abi } from "viem"
 import mockSwapAbi from "@/abi/mockswap.json"
+import { createPublicClient, http } from "viem"
+import { sepolia } from "viem/chains"
+import { isZeroDevConnector } from "@dynamic-labs/ethereum-aa"
 
 const tokens: {
   address: `0x${string}`
@@ -81,24 +78,55 @@ const transactions = [
 const MOCK_SWAP_ADDRESS =
   "0x718421BB9a6Bb63D4A63295d59c12196c3e221Ed" as `0x${string}`
 
+const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(), // or your custom RPC
+})
+
+const pollForAllowance = async (
+  owner: `0x${string}`,
+  spender: `0x${string}`,
+  expectedAmount: bigint,
+  tokenAddress: `0x${string}`,
+  maxTries = 20
+): Promise<boolean> => {
+  for (let i = 0; i < maxTries; i++) {
+    const allowance = await publicClient.readContract({
+      address: tokenAddress,
+      abi: erc20Abi as Abi,
+      functionName: "allowance",
+      args: [owner, spender],
+    })
+    if (BigInt(allowance as string) >= expectedAmount) return true
+    await new Promise((resolve) => setTimeout(resolve, 3000)) // 3s
+  }
+  return false
+}
+
 export default function TokenSwapDApp() {
   const [fromToken, setFromToken] = useState(tokens[0])
   const [toToken, setToToken] = useState(tokens[1])
-
   const [fromAmount, setFromAmount] = useState("")
   const [toAmount, setToAmount] = useState("")
   const [isConnected, setIsConnected] = useState(false)
-  const [smartAccount, setSmartAccount] = useState("")
   const [isSwapping, setIsSwapping] = useState(false)
   const [slippage, setSlippage] = useState([0.5])
   const [expiry, setExpiry] = useState([5])
   const [swapStatus, setSwapStatus] = useState<
     null | "pending" | "success" | "error"
   >(null)
+  const [error, setError] = useState("")
+  const [txHash, setTxHash] = useState("")
+  const [connector, setConnector] = useState<any>(null)
 
   const { primaryWallet } = useDynamicContext()
-
   const { accountAddress } = useSmartAccount()
+
+  console.log("primaryWallet object:", primaryWallet)
+  console.log(
+    "isZeroDevConnector:",
+    isZeroDevConnector(primaryWallet?.connector!)
+  )
 
   const tokenAddressMap: Record<string, `0x${string}`> = {
     mUSDC: "0x6c6Dc940F2E6a27921df887AD96AE586abD8EfD8",
@@ -147,76 +175,78 @@ export default function TokenSwapDApp() {
   }
 
   const handleSwap = async () => {
-    if (!fromAmount || !accountAddress) return
+    setError("")
+    setTxHash("")
+    if (
+      !primaryWallet ||
+      !isZeroDevConnector(primaryWallet.connector) ||
+      !fromAmount
+    ) {
+      setError("Smart wallet not ready or amount missing")
+      return
+    }
+    const connector = primaryWallet?.connector
+    const kernelClient = connector.getAccountAbstractionProvider({
+      withSponsorship: true,
+    })
+    if (!kernelClient) {
+      setError("No kernel client found")
+      return
+    }
     setIsSwapping(true)
     setSwapStatus("pending")
-
     try {
-      // Get decimals for the fromToken
-      const decimals = Number(
-        data?.[
-          tokens.findIndex((t) => t.symbol === fromToken.symbol) * 2 + 1
-        ] ?? 18
-      )
-      const amount = parseUnits(fromAmount, decimals)
-
-      // 1. Encode approve call
-      const approveData = encodeFunctionData({
-        abi: erc20Abi as Abi,
-        functionName: "approve",
-        args: [MOCK_SWAP_ADDRESS, amount],
-      })
-
-      // 2. Send approve as a single user operation
-      const approveRes = await fetch("/api/smartaccount", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          calls: [
-            {
-              to: fromToken.address,
-              data: approveData,
-            },
-          ],
+      const decimals = 18 // Adjust if needed
+      const amount = BigInt(parseUnits(fromAmount, decimals).toString())
+      // Approve call
+      const approveCall = {
+        to: fromToken.address,
+        value: BigInt(0),
+        data: encodeFunctionData({
+          abi: erc20Abi as Abi,
+          functionName: "approve",
+          args: [MOCK_SWAP_ADDRESS, amount],
         }),
+      }
+      // Swap call
+      const swapCall = {
+        to: MOCK_SWAP_ADDRESS,
+        value: BigInt(0),
+        data: encodeFunctionData({
+          abi: mockSwapAbi.abi as Abi,
+          functionName: "swapAToB",
+          args: [amount],
+        }),
+      }
+      // Send approve
+      const approveUserOpHash = await kernelClient.sendUserOperation({
+        callData: await kernelClient.account.encodeCalls([approveCall]),
       })
-      const approveJson = await approveRes.json()
-      if (!approveRes.ok) throw new Error(approveJson.error || "Approve failed")
+      await kernelClient.waitForUserOperationReceipt({
+        hash: approveUserOpHash,
+      })
 
-      // 3. Wait for allowance to be updated (simple delay; replace with polling for production)
+      // Add a delay to ensure allowance is updated
       await new Promise((resolve) => setTimeout(resolve, 10000)) // 10 seconds
 
-      // 4. Encode swapAToB call
-      const swapData = encodeFunctionData({
-        abi: mockSwapAbi.abi,
-        functionName: "swapAToB",
-        args: [amount],
+      // Now send swap and wait for receipt
+      const swapUserOpHash = await kernelClient.sendUserOperation({
+        callData: await kernelClient.account.encodeCalls([swapCall]),
       })
-
-      // 5. Send swap as a single user operation
-      const swapRes = await fetch("/api/smartaccount", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          calls: [
-            {
-              to: MOCK_SWAP_ADDRESS,
-              data: swapData,
-            },
-          ],
-        }),
+      const { receipt } = await kernelClient.waitForUserOperationReceipt({
+        hash: swapUserOpHash,
       })
-      const swapJson = await swapRes.json()
-      if (!swapRes.ok) throw new Error(swapJson.error || "Swap failed")
-
       setSwapStatus("success")
-    } catch (e) {
-      console.error("Swap error:", e)
+      setTxHash(receipt.transactionHash)
+    } catch (e: any) {
       setSwapStatus("error")
+      setError(e.message || "Swap failed")
+      console.error(e)
     } finally {
       setIsSwapping(false)
     }
   }
+  console.log("primarywallet connector:", primaryWallet?.connector)
 
   useEffect(() => {
     if (primaryWallet) {
@@ -225,7 +255,7 @@ export default function TokenSwapDApp() {
   }, [primaryWallet])
 
   const copyAddress = () => {
-    navigator.clipboard.writeText(smartAccount)
+    navigator.clipboard.writeText(accountAddress!)
   }
 
   return (
@@ -251,9 +281,9 @@ export default function TokenSwapDApp() {
                 </div>
                 {isConnected && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span>Smart Account: {accountAddress}</span>
+                    <span>Smart Account: {primaryWallet?.address}</span>
                     <code className="bg-gray-100 rounded text-xs">
-                      {smartAccount}
+                      {accountAddress}
                     </code>
                     <Button variant="ghost" size="sm" onClick={copyAddress}>
                       <Copy className="w-3 h-3" />
@@ -428,8 +458,16 @@ export default function TokenSwapDApp() {
 
                 {/* Swap Button */}
                 <Button
-                  onClick={handleSwap}
-                  disabled={!isConnected || !fromAmount || isSwapping}
+                  onClick={() => handleSwap()}
+                  disabled={
+                    !isConnected ||
+                    !fromAmount ||
+                    isSwapping ||
+                    !(
+                      primaryWallet?.connector &&
+                      isZeroDevConnector(primaryWallet.connector)
+                    )
+                  }
                   className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50"
                 >
                   {isSwapping ? (
