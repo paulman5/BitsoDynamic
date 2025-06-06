@@ -20,17 +20,13 @@ import {
   ExternalLink,
   RefreshCw,
   Clock,
-  CheckCircle,
   Loader2,
 } from "lucide-react"
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
-import { useSmartAccount } from "@/hooks/useSmartaccount"
 import erc20Abi from "@/abi/erc20.json"
 import { formatUnits, parseUnits, encodeFunctionData } from "viem"
 import type { Abi } from "viem"
 import mockSwapAbi from "@/abi/mockswap.json"
-import { createPublicClient, http } from "viem"
-import { sepolia } from "viem/chains"
 import { isZeroDevConnector } from "@dynamic-labs/ethereum-aa"
 
 const tokens: {
@@ -41,12 +37,12 @@ const tokens: {
 }[] = [
   {
     address: "0x6c6Dc940F2E6a27921df887AD96AE586abD8EfD8",
-    symbol: "USDC",
+    symbol: "mUSDC",
     icon: "💵",
   },
   {
     address: "0x2eC77FDcb56370A3C0aDa518DDe86D820d76743B",
-    symbol: "PEPE",
+    symbol: "mPEPE",
     icon: "🐸",
   },
 ]
@@ -78,31 +74,6 @@ const transactions = [
 const MOCK_SWAP_ADDRESS =
   "0x718421BB9a6Bb63D4A63295d59c12196c3e221Ed" as `0x${string}`
 
-const publicClient = createPublicClient({
-  chain: sepolia,
-  transport: http(), // or your custom RPC
-})
-
-const pollForAllowance = async (
-  owner: `0x${string}`,
-  spender: `0x${string}`,
-  expectedAmount: bigint,
-  tokenAddress: `0x${string}`,
-  maxTries = 20
-): Promise<boolean> => {
-  for (let i = 0; i < maxTries; i++) {
-    const allowance = await publicClient.readContract({
-      address: tokenAddress,
-      abi: erc20Abi as Abi,
-      functionName: "allowance",
-      args: [owner, spender],
-    })
-    if (BigInt(allowance as string) >= expectedAmount) return true
-    await new Promise((resolve) => setTimeout(resolve, 3000)) // 3s
-  }
-  return false
-}
-
 export default function TokenSwapDApp() {
   const [fromToken, setFromToken] = useState(tokens[0])
   const [toToken, setToToken] = useState(tokens[1])
@@ -117,10 +88,8 @@ export default function TokenSwapDApp() {
   >(null)
   const [error, setError] = useState("")
   const [txHash, setTxHash] = useState("")
-  const [connector, setConnector] = useState<any>(null)
 
   const { primaryWallet } = useDynamicContext()
-  const { accountAddress } = useSmartAccount()
 
   console.log("primaryWallet object:", primaryWallet)
   console.log(
@@ -128,18 +97,18 @@ export default function TokenSwapDApp() {
     isZeroDevConnector(primaryWallet?.connector!)
   )
 
-  const tokenAddressMap: Record<string, `0x${string}`> = {
-    mUSDC: "0x6c6Dc940F2E6a27921df887AD96AE586abD8EfD8",
-    mPEPE: "0x2eC77FDcb56370A3C0aDa518DDe86D820d76743B",
-  }
-
+  useEffect(() => {
+    if (primaryWallet) {
+      setIsConnected(true)
+    }
+  }, [primaryWallet])
   const { data, isLoading } = useReadContracts({
     contracts: tokens.flatMap((token) => [
       {
         address: token.address,
         abi: erc20Abi as Abi,
         functionName: "balanceOf",
-        args: [accountAddress!],
+        args: [primaryWallet?.address!],
       },
       {
         address: token.address,
@@ -149,7 +118,7 @@ export default function TokenSwapDApp() {
     ]),
     allowFailure: false,
     query: {
-      enabled: !!accountAddress,
+      enabled: !!primaryWallet?.address,
     },
   })
 
@@ -174,6 +143,7 @@ export default function TokenSwapDApp() {
     setToAmount(fromAmount)
   }
 
+  console.log("all wallet details:", primaryWallet)
   const handleSwap = async () => {
     setError("")
     setTxHash("")
@@ -196,19 +166,18 @@ export default function TokenSwapDApp() {
     setIsSwapping(true)
     setSwapStatus("pending")
     try {
-      const decimals = 18 // Adjust if needed
-      const amount = BigInt(parseUnits(fromAmount, decimals).toString())
-      // Approve call
-      const approveCall = {
-        to: fromToken.address,
-        value: BigInt(0),
-        data: encodeFunctionData({
-          abi: erc20Abi as Abi,
-          functionName: "approve",
-          args: [MOCK_SWAP_ADDRESS, amount],
-        }),
+      // Determine decimals for fromToken
+      let decimals = 18 // default
+      if (fromToken.symbol === "USDC" || fromToken.symbol === "mUSDC") {
+        decimals = 6
+      } else if (fromToken.symbol === "PEPE" || fromToken.symbol === "mPEPE") {
+        decimals = 18
       }
-      // Swap call
+      const amount = BigInt(parseUnits(fromAmount, decimals).toString())
+      console.log("amount", amount)
+      // Check allowance before swap
+
+      // Only send swap call (no approve)
       const swapCall = {
         to: MOCK_SWAP_ADDRESS,
         value: BigInt(0),
@@ -218,18 +187,7 @@ export default function TokenSwapDApp() {
           args: [amount],
         }),
       }
-      // Send approve
-      const approveUserOpHash = await kernelClient.sendUserOperation({
-        callData: await kernelClient.account.encodeCalls([approveCall]),
-      })
-      await kernelClient.waitForUserOperationReceipt({
-        hash: approveUserOpHash,
-      })
-
-      // Add a delay to ensure allowance is updated
-      await new Promise((resolve) => setTimeout(resolve, 10000)) // 10 seconds
-
-      // Now send swap and wait for receipt
+      // Send swap and wait for receipt
       const swapUserOpHash = await kernelClient.sendUserOperation({
         callData: await kernelClient.account.encodeCalls([swapCall]),
       })
@@ -246,18 +204,11 @@ export default function TokenSwapDApp() {
       setIsSwapping(false)
     }
   }
-  console.log("primarywallet connector:", primaryWallet?.connector)
-
-  useEffect(() => {
-    if (primaryWallet) {
-      setIsConnected(true)
-    }
-  }, [primaryWallet])
-
+  console.log("amount", fromAmount)
   const copyAddress = () => {
-    navigator.clipboard.writeText(accountAddress!)
+    navigator.clipboard.writeText(primaryWallet?.address!)
   }
-
+  console.log("swap status:", swapStatus)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
@@ -283,7 +234,7 @@ export default function TokenSwapDApp() {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <span>Smart Account: {primaryWallet?.address}</span>
                     <code className="bg-gray-100 rounded text-xs">
-                      {accountAddress}
+                      {primaryWallet?.address}
                     </code>
                     <Button variant="ghost" size="sm" onClick={copyAddress}>
                       <Copy className="w-3 h-3" />
@@ -481,25 +432,6 @@ export default function TokenSwapDApp() {
                     "Swap Tokens"
                   )}
                 </Button>
-                {swapStatus === "success" && (
-                  <div className="text-green-600 text-center mt-2">
-                    Swap successful!
-                  </div>
-                )}
-                {swapStatus === "error" && (
-                  <div className="text-red-600 text-center mt-2">
-                    Swap failed. Please try again.
-                  </div>
-                )}
-
-                {isConnected && (
-                  <div className="text-center text-sm text-gray-600">
-                    <span className="inline-flex items-center gap-1">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      Gas fees sponsored by Paymaster
-                    </span>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
