@@ -36,12 +36,12 @@ const tokens: {
   formatted?: string
 }[] = [
   {
-    address: "0x6c6Dc940F2E6a27921df887AD96AE586abD8EfD8",
+    address: "0x0cc2166DB4D31d1BaEA8c46Df757eC836b946FD8",
     symbol: "mUSDC",
     icon: "💵",
   },
   {
-    address: "0x2eC77FDcb56370A3C0aDa518DDe86D820d76743B",
+    address: "0xa2c8Bf2CB2351bC6Ae0F5492eb147B09077F183b",
     symbol: "mPEPE",
     icon: "🐸",
   },
@@ -72,7 +72,7 @@ const transactions = [
 
 // Add your deployed MockSwap contract address here:
 const MOCK_SWAP_ADDRESS =
-  "0x718421BB9a6Bb63D4A63295d59c12196c3e221Ed" as `0x${string}`
+  "0xc486Bc300E38509999C64Eed1c096A393069Bda7" as `0x${string}`
 
 export default function TokenSwapDApp() {
   const [fromToken, setFromToken] = useState(tokens[0])
@@ -174,6 +174,7 @@ export default function TokenSwapDApp() {
         decimals = 18
       }
       const amount = BigInt(parseUnits(fromAmount, decimals).toString())
+
       console.log("amount", amount)
       // Check allowance before swap
 

@@ -12,11 +12,11 @@ import { isZeroDevConnector } from "@dynamic-labs/ethereum-aa"
 
 // Hardcoded values for test
 const TEST_TOKEN_ADDRESS =
-  "0x6c6Dc940F2E6a27921df887AD96AE586abD8EfD8" as `0x${string}`
+  "0x0cc2166DB4D31d1BaEA8c46Df757eC836b946FD8" as `0x${string}`
 const TEST_TOKEN_ADDRESS_2 =
-  "0x2eC77FDcb56370A3C0aDa518DDe86D820d76743B" as `0x${string}`
+  "0xa2c8Bf2CB2351bC6Ae0F5492eb147B09077F183b" as `0x${string}`
 const TEST_SPENDER_ADDRESS =
-  "0x718421BB9a6Bb63D4A63295d59c12196c3e221Ed" as `0x${string}`
+  "0xc486Bc300E38509999C64Eed1c096A393069Bda7" as `0x${string}`
 const TOKEN_DECIMALS = 6 // USDC for example
 
 const publicClient = createPublicClient({
@@ -49,7 +49,7 @@ export default function AllowanceTestPage() {
         return
       }
       const allowanceResult = await publicClient.readContract({
-        address: TEST_TOKEN_ADDRESS_2,
+        address: TEST_TOKEN_ADDRESS,
         abi: erc20Abi as Abi,
         functionName: "allowance",
         args: [owner, TEST_SPENDER_ADDRESS],
