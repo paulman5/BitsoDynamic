@@ -11,13 +11,10 @@ import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 import { isZeroDevConnector } from "@dynamic-labs/ethereum-aa"
 
 // Hardcoded values for test
-const TEST_TOKEN_ADDRESS =
-  "0x0cc2166DB4D31d1BaEA8c46Df757eC836b946FD8" as `0x${string}`
-const TEST_TOKEN_ADDRESS_2 =
-  "0xa2c8Bf2CB2351bC6Ae0F5492eb147B09077F183b" as `0x${string}`
-const TEST_SPENDER_ADDRESS =
-  "0xc486Bc300E38509999C64Eed1c096A393069Bda7" as `0x${string}`
-const TOKEN_DECIMALS = 6 // USDC for example
+const mockUSDC = process.env.NEXT_PUBLIC_MOCK_USDC as `0x${string}`
+const mockPEPE = process.env.NEXT_PUBLIC_MOCK_PEPE as `0x${string}`
+const mockSwap = process.env.NEXT_PUBLIC_MOCK_SWAP as `0x${string}`
+const tokenDecimals = 6 // USDC for example
 
 const publicClient = createPublicClient({
   chain: sepolia,
@@ -49,10 +46,10 @@ export default function AllowanceTestPage() {
         return
       }
       const allowanceResult = await publicClient.readContract({
-        address: TEST_TOKEN_ADDRESS,
+        address: mockUSDC,
         abi: erc20Abi as Abi,
         functionName: "allowance",
-        args: [owner, TEST_SPENDER_ADDRESS],
+        args: [owner, mockSwap],
       })
       const allowanceBigInt = BigInt(allowanceResult as string)
       setAllowance(allowanceBigInt)
@@ -93,16 +90,14 @@ export default function AllowanceTestPage() {
         setIsApproving(false)
         return
       }
-      const amount = BigInt(
-        parseUnits(approveAmount, TOKEN_DECIMALS).toString()
-      )
+      const amount = BigInt(parseUnits(approveAmount, tokenDecimals).toString())
       const approveCall = {
-        to: TEST_TOKEN_ADDRESS,
+        to: mockUSDC,
         value: BigInt(0),
         data: (await import("viem")).encodeFunctionData({
           abi: erc20Abi as Abi,
           functionName: "approve",
-          args: [TEST_SPENDER_ADDRESS, amount],
+          args: [mockSwap, amount],
         }),
       }
       const userOpHash = await kernelClient.sendUserOperation({
@@ -148,7 +143,7 @@ export default function AllowanceTestPage() {
           <div className="mt-4 text-green-700">
             Allowance: {allowance.toString()} (raw)
             <br />
-            Human: {formatUnits(allowance, TOKEN_DECIMALS)}
+            Human: {formatUnits(allowance, tokenDecimals)}
           </div>
         )}
         <div className="mt-8">
@@ -156,7 +151,7 @@ export default function AllowanceTestPage() {
           <Input
             value={approveAmount}
             onChange={(e) => setApproveAmount(e.target.value)}
-            placeholder={`Amount (${TOKEN_DECIMALS} decimals)`}
+            placeholder={`Amount (${tokenDecimals} decimals)`}
             className="w-full"
             type="number"
             min="0"

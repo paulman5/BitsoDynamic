@@ -36,12 +36,12 @@ const tokens: {
   formatted?: string
 }[] = [
   {
-    address: "0x0cc2166DB4D31d1BaEA8c46Df757eC836b946FD8",
+    address: process.env.NEXT_PULIC_MOCK_USDC as `0x${string}`,
     symbol: "mUSDC",
     icon: "💵",
   },
   {
-    address: "0xa2c8Bf2CB2351bC6Ae0F5492eb147B09077F183b",
+    address: process.env.NEXT_PULIC_MOCK_PEPE as `0x${string}`,
     symbol: "mPEPE",
     icon: "🐸",
   },
@@ -71,8 +71,7 @@ const transactions = [
 ]
 
 // Add your deployed MockSwap contract address here:
-const MOCK_SWAP_ADDRESS =
-  "0xc486Bc300E38509999C64Eed1c096A393069Bda7" as `0x${string}`
+const MOCK_SWAP_ADDRESS = process.env.NEXT_PUBLIC_MOCK_SWAP as `0x${string}`
 
 export default function TokenSwapDApp() {
   const [fromToken, setFromToken] = useState(tokens[0])
