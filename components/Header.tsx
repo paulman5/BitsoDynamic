@@ -1,11 +1,8 @@
 "use client"
 
 import React from "react"
-import { Wrapper } from "./Wrapper"
-import { DynamicWidget, useDynamicContext } from "@dynamic-labs/sdk-react-core"
-import { Button } from "@/components/ui/button"
-import { Settings, Wallet } from "lucide-react"
-import { useSmartAccount } from "@/hooks/useSmartaccount"
+import { DynamicWidget } from "@dynamic-labs/sdk-react-core"
+import { Wallet } from "lucide-react"
 import Link from "next/link"
 
 type HeaderProps = {
@@ -15,18 +12,7 @@ type HeaderProps = {
   onSettingsClick?: () => void
 }
 
-const Header: React.FC<HeaderProps> = ({
-  isConnected,
-  smartAccount,
-  onConnect,
-  onSettingsClick,
-}) => {
-  // Dynamic context for login/logout, only used if not in swap page
-  const { setShowAuthFlow, showAuthFlow, handleLogOut, primaryWallet } =
-    useDynamicContext?.() || {}
-
-  const { accountAddress } = useSmartAccount()
-
+const Header: React.FC<HeaderProps> = () => {
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">

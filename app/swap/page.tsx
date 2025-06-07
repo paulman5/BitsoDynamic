@@ -13,14 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Slider } from "@/components/ui/slider"
 import {
   ArrowUpDown,
   Copy,
   Check,
   ExternalLink,
   RefreshCw,
-  Clock,
   Loader2,
 } from "lucide-react"
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
@@ -35,6 +33,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { AccountInfo } from "@/components/swap/AccountInfo"
+import { TokenBalances } from "@/components/swap/TokenBalances"
+import { SwapForm } from "@/components/swap/SwapForm"
+import { SwapLogs } from "@/components/swap/SwapLogs"
+import { SwapHistory } from "@/components/swap/SwapHistory"
 
 const tokens: {
   address: `0x${string}`
@@ -102,7 +105,7 @@ export default function TokenSwapDApp() {
     },
   })
 
-  const TokenBalances = tokens.map((token, i) => {
+  const tokenBalances = tokens.map((token, i) => {
     const balanceRaw = data?.[i * 2] as bigint | undefined
     const decimals = data?.[i * 2 + 1] as number | undefined
     const formatted =
@@ -284,187 +287,30 @@ export default function TokenSwapDApp() {
                   </Badge>
                 </div>
                 {primaryWallet && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span>Smart Account:</span>
-                    <code className="bg-gray-100 rounded text-xs">
-                      {primaryWallet.address}
-                    </code>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyAddress()}
-                          >
-                            {copySuccess ? (
-                              <Check className="w-3 h-3 text-green-600" />
-                            ) : (
-                              <Copy className="w-3 h-3" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                          {copySuccess ? "Copied!" : "Copy address"}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
+                  <AccountInfo
+                    address={primaryWallet.address}
+                    onCopy={copyAddress}
+                    copySuccess={copySuccess}
+                  />
                 )}
               </CardHeader>
-
               <CardContent className="space-y-6">
-                {/* From Token */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    From
-                  </label>
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
-                    <div className="flex items-center justify-between mb-3">
-                      <Select
-                        value={fromToken.symbol}
-                        onValueChange={(value) => {
-                          const token = tokens.find((t) => t.symbol === value)
-                          if (token) setFromToken(token)
-                        }}
-                      >
-                        <SelectTrigger className="w-auto border-0 bg-white/80 shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{fromToken.icon}</span>
-                            <SelectValue />
-                          </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tokens.map((token) => (
-                            <SelectItem key={token.symbol} value={token.symbol}>
-                              <div className="flex items-center gap-2">
-                                <span>{token.icon}</span>
-                                <span>{token.symbol}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <div className="text-right">
-                        <Input
-                          type="number"
-                          placeholder="0.0"
-                          value={fromAmount}
-                          onChange={(e) => setFromAmount(e.target.value)}
-                          className="text-right text-xl font-semibold border-0 bg-transparent p-0 h-auto"
-                        />
-                        <div className="text-xs text-gray-500 mt-1">
-                          Balance:{" "}
-                          {TokenBalances.find(
-                            (t) => t.symbol === fromToken.symbol
-                          )?.formatted ?? "-"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Swap Direction */}
-                <div className="flex justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSwapTokens}
-                    className="rounded-full w-10 h-10 p-0 border-2 bg-white hover:bg-gray-50"
-                  >
-                    <ArrowUpDown className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                {/* To Token */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    To
-                  </label>
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
-                    <div className="flex items-center justify-between mb-3">
-                      <Select
-                        value={toToken.symbol}
-                        onValueChange={(value) => {
-                          const token = tokens.find((t) => t.symbol === value)
-                          if (token) setToToken(token)
-                        }}
-                      >
-                        <SelectTrigger className="w-auto border-0 bg-white/80 shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{toToken.icon}</span>
-                            <SelectValue />
-                          </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tokens.map((token) => (
-                            <SelectItem key={token.symbol} value={token.symbol}>
-                              <div className="flex items-center gap-2">
-                                <span>{token.icon}</span>
-                                <span>{token.symbol}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <div className="text-right">
-                        <Input
-                          type="number"
-                          placeholder="0.0"
-                          value={toAmount}
-                          readOnly
-                          className="text-right text-xl font-semibold border-0 bg-transparent p-0 h-auto"
-                        />
-                        <div className="text-xs text-gray-500 mt-1">
-                          Balance:{" "}
-                          {TokenBalances.find(
-                            (t) => t.symbol === toToken.symbol
-                          )?.formatted ?? "-"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Swap Button */}
-                <Button
-                  onClick={() => handleSwap()}
-                  disabled={
-                    !primaryWallet ||
-                    !fromAmount ||
-                    isSwapping ||
-                    !(
-                      primaryWallet?.connector &&
-                      isZeroDevConnector(primaryWallet.connector)
-                    )
-                  }
-                  className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50"
-                >
-                  {isSwapping ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Swapping...
-                    </>
-                  ) : !primaryWallet ? (
-                    "Connect Wallet to Swap"
-                  ) : (
-                    "Swap Tokens"
-                  )}
-                </Button>
-
-                {/* Swap Logs */}
-                {isSwapping && txLogs.length > 0 && (
-                  <div className="text-xs text-blue-700 bg-blue-50 rounded p-3 mb-4">
-                    <div className="font-semibold mb-2">Swap Progress</div>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {txLogs.map((log, idx) => (
-                        <li key={idx}>{log}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <SwapForm
+                  fromToken={fromToken}
+                  toToken={toToken}
+                  setFromToken={setFromToken}
+                  setToToken={setToToken}
+                  fromAmount={fromAmount}
+                  setFromAmount={setFromAmount}
+                  toAmount={toAmount}
+                  isSwapping={isSwapping}
+                  handleSwap={handleSwap}
+                  handleSwapTokens={handleSwapTokens}
+                  primaryWallet={primaryWallet}
+                  isSupportedConnector={isSupportedConnector}
+                  tokenBalances={tokenBalances}
+                />
+                <SwapLogs logs={txLogs} isSwapping={isSwapping} />
               </CardContent>
             </Card>
           </div>
@@ -473,137 +319,27 @@ export default function TokenSwapDApp() {
           <div className="space-y-6">
             {/* Account Balance */}
             {primaryWallet && (
-              <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Account Balances</CardTitle>
-                    <Button variant="ghost" size="sm" onClick={handleRefresh}>
-                      <RefreshCw
-                        className={`w-4 h-4 transition-transform duration-700 ${refreshing ? "animate-spin" : ""}`}
-                      />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {isLoading || balancesLoading ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Loader2 className="w-5 h-5 mx-auto animate-spin mb-2" />
-                      <div className="text-sm">Fetching balances...</div>
-                    </div>
-                  ) : (
-                    TokenBalances.map((token) => (
-                      <div
-                        key={token.symbol}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{token.icon}</span>
-                          <div>
-                            <div className="font-medium">{token.symbol}</div>
-                            <div className="text-xs text-gray-500">
-                              {token.formatted}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">{token.formatted}</div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
+              <TokenBalances
+                balances={tokenBalances}
+                isLoading={isLoading || balancesLoading}
+                onRefresh={handleRefresh}
+                refreshing={refreshing}
+              />
             )}
-
             {/* Transaction History */}
-            <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Transaction History</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setTxLoading(true)
-                      setTransactions([])
-                      setTimeout(() => {
-                        setTransactions([])
-                        setTxLoading(false)
-                      }, 1200)
-                    }}
-                  >
-                    <RefreshCw
-                      className={`w-4 h-4 transition-transform duration-700 ${txLoading ? "animate-spin" : ""}`}
-                    />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {txLoading ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Loader2 className="w-5 h-5 mx-auto animate-spin mb-2" />
-                    <div className="text-sm">Fetching transactions...</div>
-                  </div>
-                ) : swapHistory.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <div className="text-sm">No transactions yet</div>
-                  </div>
-                ) : (
-                  <>
-                    {swapHistory.map((tx) => (
-                      <div key={tx.id} className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                tx.status === "success"
-                                  ? "bg-green-500"
-                                  : tx.status === "pending"
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
-                              }`}
-                            ></div>
-                            <span className="font-medium text-sm">
-                              {tx.type}
-                            </span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() =>
-                              window.open(
-                                `https://sepolia.etherscan.io/tx/${tx.id}`,
-                                "_blank"
-                              )
-                            }
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </Button>
-                        </div>
-                        <div className="text-xs text-gray-600 space-y-1">
-                          <div>
-                            {tx.from} {tx.to && `→ ${tx.to}`}
-                          </div>
-                          <div>Amount: {tx.amount}</div>
-                          <div className="flex items-center justify-between">
-                            <span>{tx.timestamp}</span>
-                            {tx.gasSponsored && (
-                              <Badge
-                                variant="secondary"
-                                className="text-xs bg-green-50 text-green-700"
-                              >
-                                Gas Sponsored
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <SwapHistory
+              history={swapHistory}
+              isLoading={txLoading}
+              onRefresh={() => {
+                setTxLoading(true)
+                setTransactions([])
+                setTimeout(() => {
+                  setTransactions([])
+                  setTxLoading(false)
+                }, 1200)
+              }}
+              refreshing={txLoading}
+            />
           </div>
         </div>
       </div>
