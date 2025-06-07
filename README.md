@@ -1,113 +1,124 @@
-install:
-sudo apt update
-116 sudo apt install python3 python3-pip -y
-117 pip3 install fastapi uvicorn
+# SwapFlow – Modular Next.js dApp with ZeroDev + Dynamic Smart Wallets
 
-uvicorn webhook_server_simple:app --host 0.0.0.0 --port 8080
+## Overview
 
-# Voice Wallet Control
+**SwapFlow** is a modern, gasless token swap dApp built with Next.js, React, and TypeScript. It leverages [Dynamic](https://docs.dynamic.xyz/) and [ZeroDev](https://zerodev.app/) for seamless smart wallet integration, enabling users to swap tokens with sponsored (gasless) transactions. The codebase is fully modular, with all major UI and logic split into reusable components for maintainability and scalability.
 
-to set up web hook we use script.
+---
 
-## Built With
+## Table of Contents
 
-- **Next.js**: A popular React framework for building fast, server-side rendered applications.
-- **wagmi**: React hooks for Ethereum.
-- **viem**: Ethereum interface for developers.
-- **rainbowkit**: A toolkit for building wallet connection UIs.
-- **shadcn-ui** and **acterenity ui**: Component libraries for modern UI elements.
+- [Features](#features)
+- [Architecture & Folder Structure](#architecture--folder-structure)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [How the Modularization Works](#how-the-modularization-works)
+- [ZeroDev + Dynamic Integration](#zerodev--dynamic-integration)
+- [Customization & Extending](#customization--extending)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Features
+
+- **Gasless Swaps:** All swaps are sponsored via ZeroDev paymaster, so users pay no gas.
+- **Smart Wallets:** Users interact with a smart account (kernel account) via Dynamic + ZeroDev.
+- **Modern UI:** Built with shadcn/ui, TailwindCSS, and best UX practices.
+- **Modular Components:** All swap logic is split into reusable, testable components.
+- **Transaction History:** Users see a real-time history of their swaps.
+- **Balances & Copyable Address:** Users can view balances and easily copy their smart account address.
+- **Network Agnostic:** Easily add more EVM networks supported by Dynamic/ZeroDev.
+
+---
+
+## Architecture & Folder Structure
+
+```
+/app
+  /swap
+    page.tsx           # Main swap page, orchestrates state and components
+    /allowance         # (Optional) Allowance test page
+  /payments            # (Optional) Payments page
+  layout.tsx           # App layout with Providers and Header
+  page.tsx             # Landing page
+
+/components
+  /swap
+    AccountInfo.tsx    # Smart account address + copy button
+    TokenBalances.tsx  # Token balances card
+    SwapForm.tsx       # Swap form (from/to, amounts, swap button)
+    SwapLogs.tsx       # Swap progress logs
+    SwapHistory.tsx    # Transaction history card
+  /ui                  # Reusable UI primitives (button, card, input, etc.)
+  Providers.tsx        # Dynamic, Wagmi, and Query providers
+  Header.tsx           # App header with DynamicWidget
+
+/abi                   # Contract ABIs
+/lib                   # Utility functions
+
+/types                 # (Recommended) Shared TypeScript types (see below)
+```
+
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-1. **Node.js**: Make sure you have [Node.js](https://nodejs.org/) installed.
+- **Node.js** (v18+ recommended)
+- **Yarn** or **pnpm** (or npm)
 
 ### Installation
 
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/yourusername/web3-ui-starter-pack.git
-   cd web3-ui-starter-pack
-   ```
-
-2. **Install dependencies**:
-
-   ```bash
-   pnpm install
-   #or
-   yarn
-   ```
-
-3. **Set up environment variables**:
-
-   - Create a `.env.local` file in the root of your project.
-   - Add the following variables:
-     ```bash
-     NEXT_PUBLIC_CONTRACT_ADDRESS=<Your_Contract_Address>
-     NEXT_PUBLIC_ALCHEMY_API_KEY=<Your_Alchemy_API_Key>
-     NEXT_PUBLIC_RAINBOWKIT_PROJECT_ID=<Your_RainbowKit_Project_ID>
-     ```
-
-4. **Add ABI files**:
-   - Place the ABI of your smart contract in the `abi` folder.
-
-### Running the App
-
-Start the development server:
-
 ```bash
-yarn run dev
+git clone https://github.com/yourusername/swapflow.git
+cd swapflow
+yarn install
+# or: pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the app.
+### Environment Variables
 
-## Usage
+Create a `.env.local` file in the root:
 
-This starter pack provides a basic setup for connecting to Ethereum blockchain networks. Customize it according to your project's requirements by modifying components and adding new features.
+```env
+NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_env_id
+ZERODEV_RPC=your_zerodev_bundler_rpc_url
+PRIVATE_KEY=your_server_side_private_key
+NEXT_PUBLIC_MOCK_USDC=0x... # Mock USDC token address
+NEXT_PUBLIC_MOCK_PEPE=0x... # Mock PEPE token address
+NEXT_PUBLIC_MOCK_SWAP=0x... # Mock swap contract address
+```
 
-## Contributing
+**Note:**
 
-Feel free to fork the repository and submit pull requests. Contributions are welcome!
+- `PRIVATE_KEY` is only used for server-side actions (if any). Never expose it in the frontend.
+- The mock token/contract addresses are for demo/testing.
 
-## License
+## How the Modularization Works
 
-This project is licensed under the MIT License.
+### Swap Page (`/app/swap/page.tsx`)
 
-## ZeroDev + Dynamic Smart Wallet Integration
+- **State Management:** All swap state (tokens, amounts, logs, history) is managed in the main page.
+- **Component Orchestration:** The page imports and uses modular components for each UI/logic section.
 
-This project supports [ZeroDev](https://zerodev.app/) smart wallets via [Dynamic](https://docs.dynamic.xyz/smart-wallets/smart-wallet-providers/zerodev).
+### Modular Components (`/components/swap/`)
 
-### Setup
+- **AccountInfo:** Shows the smart account address and a copy-to-clipboard button.
+- **TokenBalances:** Displays token balances for the connected account, with a refresh button.
+- **SwapForm:** Handles the swap UI (from/to tokens, amounts, swap button, direction button).
+- **SwapLogs:** Shows real-time logs/progress of the current swap.
+- **SwapHistory:** Displays a list of past swaps with status, amount, and Etherscan links.
 
-1. **Create a ZeroDev account** and project at https://dashboard.zerodev.app/. Copy your ZeroDev project ID and configure your network (e.g., Base Sepolia or Sepolia).
-2. **Enable ZeroDev in Dynamic**: In your Dynamic dashboard, enable the same network and paste your ZeroDev project ID in the Account Abstraction section.
-3. **Set up environment variables** in `.env.local`:
+**All components use named exports and receive their data/handlers via props.**  
+**All types are defined in each component or (recommended) in `/types/swap.ts` for sharing.**
 
-   ```bash
-   NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=<Your_Dynamic_Environment_ID>
-   ZERODEV_RPC=<Your_ZeroDev_Bundler_RPC_URL>
-   PRIVATE_KEY=<Your_Private_Key_For_Server_Side_Account>
-   ```
+---
 
-   - `ZERODEV_RPC` can be found in your ZeroDev project dashboard under "Bundler RPC".
-   - `PRIVATE_KEY` is used for server-side operations (never expose this in the frontend).
+## ZeroDev + Dynamic Integration
 
-4. **Install dependencies** (already included):
-
-   ```bash
-   yarn add @dynamic-labs/ethereum-aa
-   ```
-
-5. **ZeroDev connector is enabled** in `components/Providers.tsx`:
-
-   ```ts
-   import { ZeroDevSmartWalletConnectors } from "@dynamic-labs/ethereum-aa"
-   // ...
-   walletConnectors: [EthereumWalletConnectors, ZeroDevSmartWalletConnectors],
-   ```
-
-6. **Gas sponsorship**: Set up gas policies in the ZeroDev dashboard to sponsor user transactions as needed.
-
-For more details, see the [Dynamic ZeroDev documentation](https://docs.dynamic.xyz/smart-wallets/smart-wallet-providers/zerodev).
+- **Providers:** `components/Providers.tsx` wraps the app with Dynamic, Wagmi, and Query providers.
+- **Smart Wallets:** Users connect via Dynamic, and if using ZeroDev, get a smart account (kernel account) with gas sponsorship.
+- **Frontend-Only:** All user-initiated smart wallet actions (approve, swap) are handled client-side using the kernel client from the connector.
+- **Network Support:** Easily add more EVM networks in `Providers.tsx` and your Dynamic/ZeroDev dashboards.

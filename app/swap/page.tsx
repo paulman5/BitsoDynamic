@@ -1,38 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { useReadContracts } from "wagmi"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
 import { Badge } from "@/components/ui/badge"
-import {
-  ArrowUpDown,
-  Copy,
-  Check,
-  ExternalLink,
-  RefreshCw,
-  Loader2,
-} from "lucide-react"
+
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 import erc20Abi from "@/abi/erc20.json"
 import { formatUnits, parseUnits, encodeFunctionData } from "viem"
 import type { Abi } from "viem"
 import mockSwapAbi from "@/abi/mockswap.json"
 import { isZeroDevConnector } from "@dynamic-labs/ethereum-aa"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+
 import { AccountInfo } from "@/components/swap/AccountInfo"
 import { TokenBalances } from "@/components/swap/TokenBalances"
 import { SwapForm } from "@/components/swap/SwapForm"
