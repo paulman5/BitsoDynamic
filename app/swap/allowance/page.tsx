@@ -22,6 +22,9 @@ const publicClient = createPublicClient({
 })
 
 export default function AllowanceTestPage() {
+  console.log("mockUSDC", mockUSDC)
+  console.log("mockPEPE", mockPEPE)
+  console.log("mockSwap", mockSwap)
   const [owner, setOwner] = useState("")
   const [allowance, setAllowance] = useState<bigint | null>(null)
   const [isChecking, setIsChecking] = useState(false)

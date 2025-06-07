@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider"
 import {
   ArrowUpDown,
   Copy,
+  Check,
   ExternalLink,
   RefreshCw,
   Clock,
@@ -28,6 +29,12 @@ import { formatUnits, parseUnits, encodeFunctionData } from "viem"
 import type { Abi } from "viem"
 import mockSwapAbi from "@/abi/mockswap.json"
 import { isZeroDevConnector } from "@dynamic-labs/ethereum-aa"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const tokens: {
   address: `0x${string}`
@@ -36,18 +43,18 @@ const tokens: {
   formatted?: string
 }[] = [
   {
-    address: process.env.NEXT_PULIC_MOCK_USDC as `0x${string}`,
+    address: process.env.NEXT_PUBLIC_MOCK_USDC as `0x${string}`,
     symbol: "mUSDC",
     icon: "💵",
   },
   {
-    address: process.env.NEXT_PULIC_MOCK_PEPE as `0x${string}`,
+    address: process.env.NEXT_PUBLIC_MOCK_PEPE as `0x${string}`,
     symbol: "mPEPE",
     icon: "🐸",
   },
 ]
 
-const transactions = [
+const initialTransactions = [
   {
     id: "0x1a2b3c...",
     type: "Swap",
@@ -70,38 +77,33 @@ const transactions = [
   },
 ]
 
-// Add your deployed MockSwap contract address here:
-const MOCK_SWAP_ADDRESS = process.env.NEXT_PUBLIC_MOCK_SWAP as `0x${string}`
-
 export default function TokenSwapDApp() {
+  const { primaryWallet } = useDynamicContext()
+  const connector = primaryWallet?.connector
+  const isSupportedConnector = connector ? isZeroDevConnector(connector) : false
+
   const [fromToken, setFromToken] = useState(tokens[0])
   const [toToken, setToToken] = useState(tokens[1])
   const [fromAmount, setFromAmount] = useState("")
   const [toAmount, setToAmount] = useState("")
-  const [isConnected, setIsConnected] = useState(false)
   const [isSwapping, setIsSwapping] = useState(false)
-  const [slippage, setSlippage] = useState([0.5])
-  const [expiry, setExpiry] = useState([5])
   const [swapStatus, setSwapStatus] = useState<
     null | "pending" | "success" | "error"
   >(null)
   const [error, setError] = useState("")
   const [txHash, setTxHash] = useState("")
-
-  const { primaryWallet } = useDynamicContext()
+  const [copySuccess, setCopySuccess] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [balancesLoading, setBalancesLoading] = useState(false)
+  const [transactions, setTransactions] = useState(initialTransactions)
+  const [txLoading, setTxLoading] = useState(false)
+  const [swapHistory, setSwapHistory] = useState<any[]>([])
 
   console.log("primaryWallet object:", primaryWallet)
-  console.log(
-    "isZeroDevConnector:",
-    isZeroDevConnector(primaryWallet?.connector!)
-  )
+  console.log("connector:", connector)
+  console.log("isSupportedConnector:", isSupportedConnector)
 
-  useEffect(() => {
-    if (primaryWallet) {
-      setIsConnected(true)
-    }
-  }, [primaryWallet])
-  const { data, isLoading } = useReadContracts({
+  const { data, isLoading, refetch } = useReadContracts({
     contracts: tokens.flatMap((token) => [
       {
         address: token.address,
@@ -138,64 +140,92 @@ export default function TokenSwapDApp() {
     const tempToken = fromToken
     setFromToken(toToken)
     setToToken(tempToken)
-    setFromAmount(toAmount)
-    setToAmount(fromAmount)
+    setFromAmount("")
   }
 
-  console.log("all wallet details:", primaryWallet)
   const handleSwap = async () => {
     setError("")
     setTxHash("")
-    if (
-      !primaryWallet ||
-      !isZeroDevConnector(primaryWallet.connector) ||
-      !fromAmount
-    ) {
-      setError("Smart wallet not ready or amount missing")
+
+    // 1) Ensure wallet is connected
+    if (!primaryWallet) {
+      setError("Please connect your wallet first")
       return
     }
-    const connector = primaryWallet?.connector
+
+    // 2) Ensure connector exists
+    if (!connector) {
+      setError("Wallet connector not available")
+      return
+    }
+
+    // 3) Ensure it's a ZeroDev connector
+    if (!isZeroDevConnector(connector)) {
+      setError("Only ZeroDev smart wallets are supported")
+      return
+    }
+
+    // 4) Ensure an amount was entered
+    if (!fromAmount) {
+      setError("Please enter an amount to swap")
+      return
+    }
+
     const kernelClient = connector.getAccountAbstractionProvider({
       withSponsorship: true,
     })
+
     if (!kernelClient) {
       setError("No kernel client found")
       return
     }
+
     setIsSwapping(true)
     setSwapStatus("pending")
+
     try {
       // Determine decimals for fromToken
-      let decimals = 18 // default
-      if (fromToken.symbol === "USDC" || fromToken.symbol === "mUSDC") {
-        decimals = 6
-      } else if (fromToken.symbol === "PEPE" || fromToken.symbol === "mPEPE") {
-        decimals = 18
-      }
+      let decimals = fromToken.symbol.includes("mUSDC") ? 6 : 18
       const amount = BigInt(parseUnits(fromAmount, decimals).toString())
 
-      console.log("amount", amount)
-      // Check allowance before swap
-
-      // Only send swap call (no approve)
+      // Choose function name based on direction
+      let functionName = "swapAToB"
+      if (fromToken.symbol === "mPEPE" && toToken.symbol === "mUSDC") {
+        functionName = "swapBToA"
+      }
       const swapCall = {
-        to: MOCK_SWAP_ADDRESS,
+        to: process.env.NEXT_PUBLIC_MOCK_SWAP as `0x${string}`,
         value: BigInt(0),
         data: encodeFunctionData({
           abi: mockSwapAbi.abi as Abi,
-          functionName: "swapAToB",
+          functionName,
           args: [amount],
         }),
       }
-      // Send swap and wait for receipt
+
       const swapUserOpHash = await kernelClient.sendUserOperation({
         callData: await kernelClient.account.encodeCalls([swapCall]),
       })
+
       const { receipt } = await kernelClient.waitForUserOperationReceipt({
         hash: swapUserOpHash,
       })
+
       setSwapStatus("success")
       setTxHash(receipt.transactionHash)
+      setSwapHistory((prev) => [
+        {
+          id: receipt.transactionHash,
+          type: "Swap",
+          from: fromToken.symbol,
+          to: toToken.symbol,
+          amount: fromAmount,
+          status: "success",
+          timestamp: new Date().toLocaleTimeString(),
+          gasSponsored: true,
+        },
+        ...prev,
+      ])
     } catch (e: any) {
       setSwapStatus("error")
       setError(e.message || "Swap failed")
@@ -204,11 +234,48 @@ export default function TokenSwapDApp() {
       setIsSwapping(false)
     }
   }
-  console.log("amount", fromAmount)
+
   const copyAddress = () => {
-    navigator.clipboard.writeText(primaryWallet?.address!)
+    if (primaryWallet?.address) {
+      navigator.clipboard.writeText(primaryWallet.address)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 1500)
+    }
   }
-  console.log("swap status:", swapStatus)
+
+  const handleRefresh = () => {
+    setRefreshing(true)
+    setBalancesLoading(true)
+    setTimeout(() => {
+      refetch()
+      setRefreshing(false)
+      setBalancesLoading(false)
+    }, 1000)
+  }
+
+  // Refresh balances on successful swap
+  useEffect(() => {
+    if (swapStatus === "success") {
+      refetch()
+    }
+  }, [swapStatus, refetch])
+
+  // Calculate toAmount based on conversion rate
+  useEffect(() => {
+    const from = parseFloat(fromAmount)
+    if (isNaN(from)) {
+      setToAmount("")
+      return
+    }
+    // mUSDC to mPEPE: 1 mUSDC = 2 PEPE
+    // mPEPE to mUSDC: 1 PEPE = 0.5 mUSDC
+    if (fromToken.symbol === "mUSDC" && toToken.symbol === "mPEPE") {
+      setToAmount((from * 2).toString())
+    } else if (fromToken.symbol === "mPEPE" && toToken.symbol === "mUSDC") {
+      setToAmount((from * 0.5).toString())
+    }
+  }, [fromAmount, fromToken, toToken])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
@@ -230,15 +297,32 @@ export default function TokenSwapDApp() {
                     Gas Sponsored
                   </Badge>
                 </div>
-                {isConnected && (
+                {primaryWallet && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span>Smart Account: {primaryWallet?.address}</span>
+                    <span>Smart Account:</span>
                     <code className="bg-gray-100 rounded text-xs">
-                      {primaryWallet?.address}
+                      {primaryWallet.address}
                     </code>
-                    <Button variant="ghost" size="sm" onClick={copyAddress}>
-                      <Copy className="w-3 h-3" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyAddress()}
+                          >
+                            {copySuccess ? (
+                              <Check className="w-3 h-3 text-green-600" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          {copySuccess ? "Copied!" : "Copy address"}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 )}
               </CardHeader>
@@ -344,7 +428,7 @@ export default function TokenSwapDApp() {
                           type="number"
                           placeholder="0.0"
                           value={toAmount}
-                          onChange={(e) => setToAmount(e.target.value)}
+                          readOnly
                           className="text-right text-xl font-semibold border-0 bg-transparent p-0 h-auto"
                         />
                         <div className="text-xs text-gray-500 mt-1">
@@ -358,60 +442,11 @@ export default function TokenSwapDApp() {
                   </div>
                 </div>
 
-                {/* Swap Settings */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Slippage Tolerance
-                    </label>
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-600">
-                          Max Slippage
-                        </span>
-                        <span className="text-sm font-medium">
-                          {slippage[0]}%
-                        </span>
-                      </div>
-                      <Slider
-                        value={slippage}
-                        onValueChange={setSlippage}
-                        max={5}
-                        min={0.1}
-                        step={0.1}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Transaction Expiry
-                    </label>
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium">
-                          {expiry[0]} min
-                        </span>
-                      </div>
-                      <Slider
-                        value={expiry}
-                        onValueChange={setExpiry}
-                        max={30}
-                        min={1}
-                        step={1}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 {/* Swap Button */}
                 <Button
                   onClick={() => handleSwap()}
                   disabled={
-                    !isConnected ||
+                    !primaryWallet ||
                     !fromAmount ||
                     isSwapping ||
                     !(
@@ -426,7 +461,7 @@ export default function TokenSwapDApp() {
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                       Swapping...
                     </>
-                  ) : !isConnected ? (
+                  ) : !primaryWallet ? (
                     "Connect Wallet to Swap"
                   ) : (
                     "Swap Tokens"
@@ -439,19 +474,24 @@ export default function TokenSwapDApp() {
           {/* Transaction History & Account Info */}
           <div className="space-y-6">
             {/* Account Balance */}
-            {isConnected && (
+            {primaryWallet && (
               <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">Account Balances</CardTitle>
-                    <Button variant="ghost" size="sm">
-                      <RefreshCw className="w-4 h-4" />
+                    <Button variant="ghost" size="sm" onClick={handleRefresh}>
+                      <RefreshCw
+                        className={`w-4 h-4 transition-transform duration-700 ${refreshing ? "animate-spin" : ""}`}
+                      />
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {isLoading ? (
-                    <div>Loading balances...</div>
+                  {isLoading || balancesLoading ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Loader2 className="w-5 h-5 mx-auto animate-spin mb-2" />
+                      <div className="text-sm">Fetching balances...</div>
+                    </div>
                   ) : (
                     TokenBalances.map((token) => (
                       <div
@@ -482,59 +522,135 @@ export default function TokenSwapDApp() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Transaction History</CardTitle>
-                  <Button variant="ghost" size="sm">
-                    <RefreshCw className="w-4 h-4" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setTxLoading(true)
+                      setTransactions([])
+                      setTimeout(() => {
+                        setTransactions(initialTransactions)
+                        setTxLoading(false)
+                      }, 1200)
+                    }}
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 transition-transform duration-700 ${txLoading ? "animate-spin" : ""}`}
+                    />
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {transactions.length === 0 ? (
+                {isSwapping ? (
+                  <div className="text-xs text-blue-700 bg-blue-50 rounded p-3">
+                    <div className="font-semibold mb-2">Processing Swap...</div>
+                  </div>
+                ) : txLoading ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Loader2 className="w-5 h-5 mx-auto animate-spin mb-2" />
+                    <div className="text-sm">Fetching transactions...</div>
+                  </div>
+                ) : swapHistory.length === 0 && transactions.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <div className="text-sm">No transactions yet</div>
                   </div>
                 ) : (
-                  transactions.map((tx) => (
-                    <div key={tx.id} className="p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              tx.status === "success"
-                                ? "bg-green-500"
-                                : tx.status === "pending"
-                                  ? "bg-yellow-500"
-                                  : "bg-red-500"
-                            }`}
-                          ></div>
-                          <span className="font-medium text-sm">{tx.type}</span>
+                  <>
+                    {swapHistory.map((tx) => (
+                      <div key={tx.id} className="p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                tx.status === "success"
+                                  ? "bg-green-500"
+                                  : tx.status === "pending"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
+                              }`}
+                            ></div>
+                            <span className="font-medium text-sm">
+                              {tx.type}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() =>
+                              window.open(
+                                `https://sepolia.etherscan.io/tx/${tx.id}`,
+                                "_blank"
+                              )
+                            }
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </Button>
+                        <div className="text-xs text-gray-600 space-y-1">
+                          <div>
+                            {tx.from} {tx.to && `→ ${tx.to}`}
+                          </div>
+                          <div>Amount: {tx.amount}</div>
+                          <div className="flex items-center justify-between">
+                            <span>{tx.timestamp}</span>
+                            {tx.gasSponsored && (
+                              <Badge
+                                variant="secondary"
+                                className="text-xs bg-green-50 text-green-700"
+                              >
+                                Gas Sponsored
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <div>
-                          {tx.from} {tx.to && `→ ${tx.to}`}
+                    ))}
+                    {transactions.map((tx) => (
+                      <div key={tx.id} className="p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                tx.status === "success"
+                                  ? "bg-green-500"
+                                  : tx.status === "pending"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
+                              }`}
+                            ></div>
+                            <span className="font-medium text-sm">
+                              {tx.type}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </Button>
                         </div>
-                        <div>Amount: {tx.amount}</div>
-                        <div className="flex items-center justify-between">
-                          <span>{tx.timestamp}</span>
-                          {tx.gasSponsored && (
-                            <Badge
-                              variant="secondary"
-                              className="text-xs bg-green-50 text-green-700"
-                            >
-                              Gas Sponsored
-                            </Badge>
-                          )}
+                        <div className="text-xs text-gray-600 space-y-1">
+                          <div>
+                            {tx.from} {tx.to && `→ ${tx.to}`}
+                          </div>
+                          <div>Amount: {tx.amount}</div>
+                          <div className="flex items-center justify-between">
+                            <span>{tx.timestamp}</span>
+                            {tx.gasSponsored && (
+                              <Badge
+                                variant="secondary"
+                                className="text-xs bg-green-50 text-green-700"
+                              >
+                                Gas Sponsored
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                  </>
                 )}
               </CardContent>
             </Card>
