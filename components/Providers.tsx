@@ -11,7 +11,8 @@ import { DynamicWagmiConnector } from "@dynamic-labs/wagmi-connector"
 import { createConfig, WagmiProvider } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { http } from "viem"
-import { mainnet, sepolia } from "viem/chains"
+import { sepolia } from "viem/chains"
+import { ZeroDevSmartWalletConnectorsWithConfig } from "@dynamic-labs/ethereum-aa"
 
 const config = createConfig({
   chains: [sepolia],

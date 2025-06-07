@@ -54,33 +54,11 @@ const tokens: {
   },
 ]
 
-const initialTransactions = [
-  {
-    id: "0x1a2b3c...",
-    type: "Swap",
-    from: "PEPE",
-    to: "USDC",
-    amount: "100,000",
-    status: "success",
-    timestamp: "2 min ago",
-    gasSponsored: true,
-  },
-  {
-    id: "0x4d5e6f...",
-    type: "Approve",
-    from: "WETH",
-    to: "",
-    amount: "1.0",
-    status: "pending",
-    timestamp: "5 min ago",
-    gasSponsored: true,
-  },
-]
-
 export default function TokenSwapDApp() {
   const { primaryWallet } = useDynamicContext()
   const connector = primaryWallet?.connector
   const isSupportedConnector = connector ? isZeroDevConnector(connector) : false
+  const mockSwap = process.env.NEXT_PUBLIC_MOCK_SWAP as `0x${string}`
 
   const [fromToken, setFromToken] = useState(tokens[0])
   const [toToken, setToToken] = useState(tokens[1])
@@ -95,9 +73,10 @@ export default function TokenSwapDApp() {
   const [copySuccess, setCopySuccess] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [balancesLoading, setBalancesLoading] = useState(false)
-  const [transactions, setTransactions] = useState(initialTransactions)
+  const [transactions, setTransactions] = useState<any[]>([])
   const [txLoading, setTxLoading] = useState(false)
   const [swapHistory, setSwapHistory] = useState<any[]>([])
+  const [txLogs, setTxLogs] = useState<string[]>([])
 
   console.log("primaryWallet object:", primaryWallet)
   console.log("connector:", connector)
@@ -146,37 +125,28 @@ export default function TokenSwapDApp() {
   const handleSwap = async () => {
     setError("")
     setTxHash("")
+    setTxLogs(["Swap initiated..."])
 
-    // 1) Ensure wallet is connected
-    if (!primaryWallet) {
-      setError("Please connect your wallet first")
-      return
-    }
-
-    // 2) Ensure connector exists
     if (!connector) {
-      setError("Wallet connector not available")
+      setError("No connector found")
       return
     }
 
-    // 3) Ensure it's a ZeroDev connector
     if (!isZeroDevConnector(connector)) {
-      setError("Only ZeroDev smart wallets are supported")
+      setError("Connector is not a ZeroDev connector")
       return
     }
 
-    // 4) Ensure an amount was entered
-    if (!fromAmount) {
-      setError("Please enter an amount to swap")
-      return
-    }
-
-    const kernelClient = connector.getAccountAbstractionProvider({
+    const kernelClient = connector?.getAccountAbstractionProvider({
       withSponsorship: true,
     })
 
     if (!kernelClient) {
       setError("No kernel client found")
+      setTxLogs((logs: string[]) => [
+        ...logs,
+        "Swap failed: No kernel client found",
+      ])
       return
     }
 
@@ -187,6 +157,10 @@ export default function TokenSwapDApp() {
       // Determine decimals for fromToken
       let decimals = fromToken.symbol.includes("mUSDC") ? 6 : 18
       const amount = BigInt(parseUnits(fromAmount, decimals).toString())
+      setTxLogs((logs: string[]) => [
+        ...logs,
+        `Preparing swap for ${fromAmount} ${fromToken.symbol}`,
+      ])
 
       // Choose function name based on direction
       let functionName = "swapAToB"
@@ -194,7 +168,7 @@ export default function TokenSwapDApp() {
         functionName = "swapBToA"
       }
       const swapCall = {
-        to: process.env.NEXT_PUBLIC_MOCK_SWAP as `0x${string}`,
+        to: mockSwap,
         value: BigInt(0),
         data: encodeFunctionData({
           abi: mockSwapAbi.abi as Abi,
@@ -202,17 +176,25 @@ export default function TokenSwapDApp() {
           args: [amount],
         }),
       }
-
+      setTxLogs((logs: string[]) => [...logs, "Sending UserOp..."])
       const swapUserOpHash = await kernelClient.sendUserOperation({
         callData: await kernelClient.account.encodeCalls([swapCall]),
       })
-
+      setTxLogs((logs: string[]) => [
+        ...logs,
+        `UserOp sent: ${swapUserOpHash}`,
+        "Waiting for receipt...",
+      ])
       const { receipt } = await kernelClient.waitForUserOperationReceipt({
         hash: swapUserOpHash,
       })
 
       setSwapStatus("success")
       setTxHash(receipt.transactionHash)
+      setTxLogs((logs: string[]) => [
+        ...logs,
+        `Swap completed! Tx Hash: ${receipt.transactionHash}`,
+      ])
       setSwapHistory((prev) => [
         {
           id: receipt.transactionHash,
@@ -229,6 +211,10 @@ export default function TokenSwapDApp() {
     } catch (e: any) {
       setSwapStatus("error")
       setError(e.message || "Swap failed")
+      setTxLogs((logs: string[]) => [
+        ...logs,
+        `Swap failed: ${e.message || "Unknown error"}`,
+      ])
       console.error(e)
     } finally {
       setIsSwapping(false)
@@ -467,6 +453,18 @@ export default function TokenSwapDApp() {
                     "Swap Tokens"
                   )}
                 </Button>
+
+                {/* Swap Logs */}
+                {isSwapping && txLogs.length > 0 && (
+                  <div className="text-xs text-blue-700 bg-blue-50 rounded p-3 mb-4">
+                    <div className="font-semibold mb-2">Swap Progress</div>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {txLogs.map((log, idx) => (
+                        <li key={idx}>{log}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -529,7 +527,7 @@ export default function TokenSwapDApp() {
                       setTxLoading(true)
                       setTransactions([])
                       setTimeout(() => {
-                        setTransactions(initialTransactions)
+                        setTransactions([])
                         setTxLoading(false)
                       }, 1200)
                     }}
@@ -541,16 +539,12 @@ export default function TokenSwapDApp() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {isSwapping ? (
-                  <div className="text-xs text-blue-700 bg-blue-50 rounded p-3">
-                    <div className="font-semibold mb-2">Processing Swap...</div>
-                  </div>
-                ) : txLoading ? (
+                {txLoading ? (
                   <div className="text-center py-8 text-gray-500">
                     <Loader2 className="w-5 h-5 mx-auto animate-spin mb-2" />
                     <div className="text-sm">Fetching transactions...</div>
                   </div>
-                ) : swapHistory.length === 0 && transactions.length === 0 ? (
+                ) : swapHistory.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <div className="text-sm">No transactions yet</div>
                   </div>
@@ -583,50 +577,6 @@ export default function TokenSwapDApp() {
                                 "_blank"
                               )
                             }
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </Button>
-                        </div>
-                        <div className="text-xs text-gray-600 space-y-1">
-                          <div>
-                            {tx.from} {tx.to && `→ ${tx.to}`}
-                          </div>
-                          <div>Amount: {tx.amount}</div>
-                          <div className="flex items-center justify-between">
-                            <span>{tx.timestamp}</span>
-                            {tx.gasSponsored && (
-                              <Badge
-                                variant="secondary"
-                                className="text-xs bg-green-50 text-green-700"
-                              >
-                                Gas Sponsored
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {transactions.map((tx) => (
-                      <div key={tx.id} className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                tx.status === "success"
-                                  ? "bg-green-500"
-                                  : tx.status === "pending"
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
-                              }`}
-                            ></div>
-                            <span className="font-medium text-sm">
-                              {tx.type}
-                            </span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
                           >
                             <ExternalLink className="w-3 h-3" />
                           </Button>
