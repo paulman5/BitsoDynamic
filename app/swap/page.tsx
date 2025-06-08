@@ -18,7 +18,6 @@ import { TokenBalances } from "@/components/swap/TokenBalances"
 import { SwapForm } from "@/components/swap/SwapForm"
 import { SwapLogs } from "@/components/swap/SwapLogs"
 import { SwapHistory } from "@/components/swap/SwapHistory"
-import { AnimatedBackground } from "@/components/ui/animated-blur-blob-background"
 
 const tokens: {
   address: `0x${string}`
@@ -248,7 +247,6 @@ export default function TokenSwapDApp() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      <AnimatedBackground />
       <div className="w-full max-w-5xl mx-auto px-4 py-10 z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           {/* Swap Card */}
