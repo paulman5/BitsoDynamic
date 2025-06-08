@@ -246,58 +246,52 @@ export default function TokenSwapDApp() {
   }, [fromAmount, fromToken, toToken])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-          {/* Main Swap Interface */}
-          <div className="lg:col-span-2">
-            <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-2xl font-bold text-gray-900">
-                    Token Swap
-                  </CardTitle>
-                  <Badge
-                    variant="secondary"
-                    className="bg-blue-50 text-blue-700 border-blue-200"
-                  >
-                    Gas Sponsored
-                  </Badge>
-                </div>
-                {primaryWallet && (
-                  <AccountInfo
-                    address={primaryWallet.address}
-                    onCopy={copyAddress}
-                    copySuccess={copySuccess}
-                  />
-                )}
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <SwapForm
-                  fromToken={fromToken}
-                  toToken={toToken}
-                  setFromToken={setFromToken}
-                  setToToken={setToToken}
-                  fromAmount={fromAmount}
-                  setFromAmount={setFromAmount}
-                  toAmount={toAmount}
-                  isSwapping={isSwapping}
-                  handleSwap={handleSwap}
-                  handleSwapTokens={handleSwapTokens}
-                  primaryWallet={primaryWallet}
-                  isSupportedConnector={isSupportedConnector}
-                  tokenBalances={tokenBalances}
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+      <div className="w-full max-w-5xl mx-auto px-4 py-10 z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          {/* Swap Card */}
+          <Card className="rounded-3xl shadow-2xl bg-white/80 backdrop-blur-xl border-0 p-0 animate-fade-in">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                  Swap
+                </CardTitle>
+                <Badge
+                  variant="secondary"
+                  className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-1 rounded-lg"
+                >
+                  Gas Sponsored
+                </Badge>
+              </div>
+              {primaryWallet && (
+                <AccountInfo
+                  address={primaryWallet.address}
+                  onCopy={copyAddress}
+                  copySuccess={copySuccess}
                 />
-                <SwapLogs logs={txLogs} isSwapping={isSwapping} />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Transaction History & Account Info */}
-          <div className="space-y-6">
-            {/* Account Balance */}
+              )}
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <SwapForm
+                fromToken={fromToken}
+                toToken={toToken}
+                setFromToken={setFromToken}
+                setToToken={setToToken}
+                fromAmount={fromAmount}
+                setFromAmount={setFromAmount}
+                toAmount={toAmount}
+                isSwapping={isSwapping}
+                handleSwap={handleSwap}
+                handleSwapTokens={handleSwapTokens}
+                primaryWallet={primaryWallet}
+                isSupportedConnector={isSupportedConnector}
+                tokenBalances={tokenBalances}
+              />
+              <SwapLogs logs={txLogs} isSwapping={isSwapping} />
+            </CardContent>
+          </Card>
+          {/* Sidebar: Balances + History */}
+          <div className="flex flex-col gap-8 w-full">
             {primaryWallet && (
               <TokenBalances
                 balances={tokenBalances}
@@ -306,7 +300,6 @@ export default function TokenSwapDApp() {
                 refreshing={refreshing}
               />
             )}
-            {/* Transaction History */}
             <SwapHistory
               history={swapHistory}
               isLoading={txLoading}

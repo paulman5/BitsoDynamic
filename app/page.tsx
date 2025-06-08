@@ -5,10 +5,7 @@ import { Button } from "@/components/ui/button"
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 via-blue-50 to-white relative overflow-hidden pt-24">
-      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-gradient-to-br from-blue-400 via-indigo-300 to-indigo-500 opacity-30 rounded-full blur-3xl z-0 animate-float-slow" />
-      <div className="absolute top-1/3 left-1/2 w-[300px] h-[300px] bg-gradient-to-tr from-purple-200 via-blue-200 to-pink-200 opacity-20 rounded-full blur-2xl z-0 animate-float" />
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gradient-to-tr from-pink-300 to-purple-400 opacity-20 rounded-full blur-2xl z-0 animate-float-reverse" />
+    <div className="min-h-screen flex flex-col items-center justify-center relative pt-24">
       <div className="max-w-2xl w-full px-8 py-20 bg-white/70 rounded-3xl shadow-2xl backdrop-blur-md flex flex-col items-center z-10 border border-blue-100 transition-all duration-300">
         <h1 className="text-5xl md:text-6xl font-extrabold text-center mb-4 bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-500 bg-clip-text text-transparent drop-shadow-lg animate-fade-in">
           SwapFlow

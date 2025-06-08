@@ -67,3 +67,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Hide number input spin buttons for .hide-number-spin */
+input.hide-number-spin::-webkit-outer-spin-button,
+input.hide-number-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input.hide-number-spin[type="number"] {
+  -moz-appearance: textfield;
+}
+
+@keyframes gradient-move {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+.animate-gradient-move {
+  animation: gradient-move 16s ease-in-out infinite;
+  background-size: 200% 200%;
+}

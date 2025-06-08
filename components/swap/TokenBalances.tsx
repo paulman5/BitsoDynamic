@@ -22,11 +22,18 @@ export function TokenBalances({
   refreshing,
 }: TokenBalancesProps) {
   return (
-    <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+    <Card className="rounded-2xl shadow-lg bg-white/80 backdrop-blur-xl border-0">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Account Balances</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onRefresh}>
+          <CardTitle className="text-lg font-semibold text-gray-900">
+            Account Balances
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            className="rounded-full hover:bg-blue-50"
+          >
             <RefreshCw
               className={`w-4 h-4 transition-transform duration-700 ${refreshing ? "animate-spin" : ""}`}
             />
@@ -43,17 +50,21 @@ export function TokenBalances({
           balances.map((token) => (
             <div
               key={token.symbol}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              className="flex items-center justify-between p-3 bg-white/70 rounded-xl hover:bg-blue-50 transition-colors"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{token.icon}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{token.icon}</span>
                 <div>
-                  <div className="font-medium">{token.symbol}</div>
+                  <div className="font-medium text-gray-900">
+                    {token.symbol}
+                  </div>
                   <div className="text-xs text-gray-500">{token.formatted}</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-medium">{token.formatted}</div>
+                <div className="font-semibold text-lg text-gray-900">
+                  {token.formatted}
+                </div>
               </div>
             </div>
           ))

@@ -28,11 +28,18 @@ export function SwapHistory({
   refreshing,
 }: SwapHistoryProps) {
   return (
-    <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+    <Card className="rounded-2xl shadow-lg bg-white/80 backdrop-blur-xl border-0">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Transaction History</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onRefresh}>
+          <CardTitle className="text-lg font-semibold text-gray-900">
+            Transaction History
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            className="rounded-full hover:bg-blue-50"
+          >
             <RefreshCw
               className={`w-4 h-4 transition-transform duration-700 ${refreshing ? "animate-spin" : ""}`}
             />
@@ -52,11 +59,23 @@ export function SwapHistory({
         ) : (
           <>
             {history.map((tx) => (
-              <div key={tx.id} className="p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
+              <div
+                key={tx.id}
+                className="p-4 bg-white/70 rounded-xl flex flex-col gap-1 shadow-sm hover:bg-blue-50 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
+                    <span className="text-xl">
+                      {(() => {
+                        const token = [
+                          { symbol: "mUSDC", icon: "💵" },
+                          { symbol: "mPEPE", icon: "🐸" },
+                        ].find((t) => t.symbol === tx.from)
+                        return token ? token.icon : ""
+                      })()}
+                    </span>
                     <div
-                      className={`w-2 h-2 rounded-full ${
+                      className={`w-2.5 h-2.5 rounded-full ${
                         tx.status === "success"
                           ? "bg-green-500"
                           : tx.status === "pending"
@@ -64,12 +83,14 @@ export function SwapHistory({
                             : "bg-red-500"
                       }`}
                     ></div>
-                    <span className="font-medium text-sm">{tx.type}</span>
+                    <span className="font-medium text-sm text-gray-900">
+                      {tx.type}
+                    </span>
                   </div>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
+                    size="icon"
+                    className="h-8 w-8 p-0 rounded-full hover:bg-blue-100"
                     onClick={() =>
                       window.open(
                         `https://sepolia.etherscan.io/tx/${tx.id}`,
@@ -77,20 +98,20 @@ export function SwapHistory({
                       )
                     }
                   >
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-4 h-4 text-blue-600" />
                   </Button>
                 </div>
-                <div className="text-xs text-gray-600 space-y-1">
+                <div className="text-xs text-gray-600 flex flex-col gap-0.5">
                   <div>
                     {tx.from} {tx.to && `→ ${tx.to}`}
                   </div>
                   <div>Amount: {tx.amount}</div>
-                  <div className="flex items-center justify-between">
-                    <span>{tx.timestamp}</span>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-gray-500">{tx.timestamp}</span>
                     {tx.gasSponsored && (
                       <Badge
                         variant="secondary"
-                        className="text-xs bg-green-50 text-green-700"
+                        className="text-xs bg-green-50 text-green-700 rounded-md px-2 py-0.5"
                       >
                         Gas Sponsored
                       </Badge>
