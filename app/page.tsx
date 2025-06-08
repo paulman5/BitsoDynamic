@@ -2,10 +2,12 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { AnimatedBackground } from "@/components/ui/animated-blur-blob-background"
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative pt-24">
+      <AnimatedBackground />
       <div className="max-w-2xl w-full px-8 py-20 bg-white/70 rounded-3xl shadow-2xl backdrop-blur-md flex flex-col items-center z-10 border border-blue-100 transition-all duration-300">
         <h1 className="text-5xl md:text-6xl font-extrabold text-center mb-4 bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-500 bg-clip-text text-transparent drop-shadow-lg animate-fade-in">
           SwapFlow
