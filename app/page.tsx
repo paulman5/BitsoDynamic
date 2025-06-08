@@ -2,90 +2,76 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { SpotlightCard } from "@/components/ui/spotlight-card"
+import { LucideZap, LucideSparkles, LucideRefreshCw } from "lucide-react"
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative pt-24">
-      <div className="max-w-2xl w-full px-8 py-20 bg-white/70 rounded-3xl shadow-2xl backdrop-blur-md flex flex-col items-center z-10 border border-blue-100 transition-all duration-300">
-        <h1 className="text-5xl md:text-6xl font-extrabold text-center mb-4 bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-500 bg-clip-text text-transparent drop-shadow-lg animate-fade-in">
+    <div className="min-h-screen flex flex-col items-center justify-center pt-16 px-4">
+      {/* Hero Section */}
+      <div className="w-full max-w-3xl text-center mb-8 mt-8">
+        <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-500 bg-clip-text text-transparent drop-shadow-lg animate-fade-in">
           SwapFlow
         </h1>
-        <p className="text-xl text-gray-700 text-center mb-6 font-semibold tracking-wide animate-fade-in delay-100">
+        <p className="mt-4 text-lg md:text-2xl text-gray-700 font-medium animate-fade-in delay-100">
           Gasless, seamless, and modern token swaps.
           <br />
           Powered by ZeroDev Smart Wallets & Dynamic.
         </p>
-        <div className="flex flex-col md:flex-row gap-4 w-full justify-center mb-8 animate-fade-in delay-200">
-          <FeatureCard
-            icon="⚡"
-            title="Gasless UX"
-            desc="No gas fees. Experience seamless, sponsored transactions."
-          />
-          <FeatureCard
-            icon="✨"
-            title="Modern Web3"
-            desc="Smart wallets, beautiful UI, and next-gen user experience."
-          />
-          <FeatureCard
-            icon="🔄"
-            title="Effortless Swaps"
-            desc="Swap tokens instantly with a single click."
-          />
-        </div>
-        <Link href="/swap" className="w-full">
+      </div>
+      {/* Launch App Button */}
+      <div className="w-full flex justify-center mb-10 animate-fade-in delay-200">
+        <Link href="/swap" className="w-full max-w-xs">
           <Button
             size="lg"
-            className="w-full h-16 text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl transition-all duration-200 rounded-2xl border-2 border-blue-200 animate-fade-in delay-300"
+            className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-purple-600 via-indigo-700 to-blue-700 shadow-lg transition-all duration-300 rounded-2xl border-blue-200 focus:outline-none focus:ring-4 focus:ring-purple-300/40 hover:shadow-2xl relative overflow-hidden group"
           >
-            Launch App
+            <span className="relative z-10">Launch App</span>
+            <span className="absolute inset-0 z-0 bg-gradient-to-r from-purple-400/30 via-indigo-400/20 to-blue-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-lg rounded-2xl" />
           </Button>
         </Link>
       </div>
-      <div className="absolute inset-0 pointer-events-none z-20">
-        <Sparkles />
+      {/* Feature Cards */}
+      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 animate-fade-in delay-300">
+        <SpotlightCard
+          className="bg-white border border-blue-100 rounded-3xl shadow-lg p-8 flex flex-col items-center gap-4 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-300 group"
+          spotlightColor="#ffe06680"
+        >
+          <span className="mb-2">
+            <LucideZap className="text-yellow-500 w-10 h-10 group-hover:scale-110 transition-transform" />
+          </span>
+          <span className="font-bold text-xl text-blue-700">Gasless UX</span>
+          <span className="text-gray-600 text-base text-center">
+            No gas fees. Experience seamless, sponsored transactions.
+          </span>
+        </SpotlightCard>
+        <SpotlightCard
+          className="bg-white border border-blue-100 rounded-3xl shadow-lg p-8 flex flex-col items-center gap-4 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-300 group"
+          spotlightColor="#a066ff80"
+        >
+          <span className="mb-2">
+            <LucideSparkles className="text-indigo-500 w-10 h-10 group-hover:scale-110 transition-transform" />
+          </span>
+          <span className="font-bold text-xl text-blue-700">Modern Web3</span>
+          <span className="text-gray-600 text-base text-center">
+            Smart wallets, beautiful UI, and next-gen user experience.
+          </span>
+        </SpotlightCard>
+        <SpotlightCard
+          className="bg-white border border-blue-100 rounded-3xl shadow-lg p-8 flex flex-col items-center gap-4 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-300 group"
+          spotlightColor="#66e0ff80"
+        >
+          <span className="mb-2">
+            <LucideRefreshCw className="text-purple-500 w-10 h-10 group-hover:scale-110 transition-transform" />
+          </span>
+          <span className="font-bold text-xl text-blue-700">
+            Effortless Swaps
+          </span>
+          <span className="text-gray-600 text-base text-center">
+            Swap tokens instantly with a single click.
+          </span>
+        </SpotlightCard>
       </div>
-      <div className="h-24 w-full" />
     </div>
-  )
-}
-
-function FeatureCard({
-  icon,
-  title,
-  desc,
-}: {
-  icon: string
-  title: string
-  desc: string
-}) {
-  return (
-    <div className="flex-1 min-w-[180px] bg-white/70 border border-blue-100 rounded-xl shadow-md p-4 flex flex-col items-center gap-2 backdrop-blur-sm hover:scale-105 transition-transform">
-      <span className="text-3xl mb-1">{icon}</span>
-      <span className="font-bold text-lg text-blue-700">{title}</span>
-      <span className="text-gray-600 text-sm text-center">{desc}</span>
-    </div>
-  )
-}
-
-function Sparkles() {
-  return (
-    <>
-      <div
-        className="absolute left-1/4 top-1/3 w-2 h-2 bg-yellow-300 rounded-full opacity-70 animate-pulse"
-        style={{ animationDuration: "2.5s" }}
-      />
-      <div
-        className="absolute right-1/3 top-1/4 w-1.5 h-1.5 bg-pink-300 rounded-full opacity-60 animate-pulse"
-        style={{ animationDuration: "3.2s" }}
-      />
-      <div
-        className="absolute left-1/2 bottom-1/4 w-2 h-2 bg-blue-400 rounded-full opacity-50 animate-pulse"
-        style={{ animationDuration: "2.1s" }}
-      />
-      <div
-        className="absolute right-1/4 bottom-1/3 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-60 animate-pulse"
-        style={{ animationDuration: "2.8s" }}
-      />
-    </>
   )
 }

@@ -1,14 +1,14 @@
 import "./globals.css"
 import "react-toastify/dist/ReactToastify.css"
 import type { Metadata } from "next"
-import { Inter as FontSans } from "next/font/google"
+import { Inter } from "next/font/google"
 import Providers from "@/components/Providers"
 import { Header } from "@/components/Header"
 import { ToastContainer } from "react-toastify"
 import { cn } from "@/lib/utils"
 import { AnimatedBackground } from "@/components/ui/animated-blur-blob-background"
 
-const fontSans = FontSans({
+const fontSans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
 })
