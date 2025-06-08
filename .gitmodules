@@ -1,7 +1,7 @@
 [submodule "BitsoContracts"]
-    path = BitsoContracts
-    url  = https://github.com/paulman5/Mockcontracts.git
-    branch = main
+	path = BitsoContracts
+	url = https://github.com/paulman5/Mockcontracts.git
+	branch = main
 
 [submodule "BitsoFrontend"]
     path = BitsoFrontend
