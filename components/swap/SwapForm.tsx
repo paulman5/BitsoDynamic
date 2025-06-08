@@ -5,7 +5,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
 import { ArrowUpDown, Loader2 } from "lucide-react"
 
